@@ -1,358 +1,1215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Goose Ultimate Usage Dashboard</title>
-<script src="./chart.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
-.container{max-width:1400px;margin:0 auto;padding:24px}
-header{display:flex;align-items:center;gap:16px;margin-bottom:4px;flex-wrap:wrap}
-header h1{font-size:28px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.live-pill{display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #30363d;padding:4px 12px;border-radius:20px;font-size:11px;color:#8b949e;margin-left:auto}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#3fb950;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.subtitle{color:#8b949e;font-size:12px;margin-bottom:20px}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
-.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;text-align:center;position:relative;overflow:hidden}
-.kpi-card .trend{font-size:11px;font-weight:600;margin-bottom:2px}
-.kpi-card .trend.up{color:#3fb950}
-.kpi-card .trend.down{color:#f85149}
-.kpi-card .trend.neutral{color:#8b949e}
-.kpi-card .value{font-size:20px;font-weight:700;color:#58a6ff;margin-bottom:2px;font-family:"SF Mono",Monaco,monospace}
-.kpi-card .label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.5px}
-.row{display:grid;gap:14px;margin-bottom:20px}
-.row-3{grid-template-columns:repeat(3,1fr)}
-.row-2{grid-template-columns:repeat(2,1fr)}
-.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px}
-.panel h3{font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.panel h3 .icon{font-size:15px}
-.chart-container{height:250px;position:relative}
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{background:#21262d;color:#8b949e;font-weight:600;text-align:left;padding:8px 10px;position:sticky;top:0;z-index:1}
-td{padding:8px 10px;border-bottom:1px solid #21262d;font-family:"SF Mono",Monaco,monospace}
-tr:hover{background:#0f1317}
-.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:600}
-.scroll-table{max-height:340px;overflow-y:auto;border:1px solid #30363d;border-radius:8px}
-.anomaly-item{padding:10px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:6px;background:#0f1317;font-size:12px}
-.anomaly-item.warning{border-color:#f0883e}
-.anomaly-item.info{border-color:#3fb950}
-.anomaly-item.danger{border-color:#f85149}
-.recommendation-item{padding:10px;background:#0f1317;border-radius:4px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;font-size:12px}
-.recommendation-item .icon{font-size:16px}
-.flow-box{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid;border-radius:6px;font-size:11px;font-weight:600}
-.flow-arrow{color:#8b949e;font-size:16px}
-#last-updated{color:#484f58;font-size:10px;text-align:right;margin-bottom:6px}
-@media(max-width:900px){.row-3,.row-2{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="container">
-<header>
-<span style="font-size:32px">🦆</span>
-<h1>Goose Usage Dashboard</h1>
-<div class="live-pill"><span class="live-dot"></span><span id="live-text">Live — polling every 5s</span></div>
-</header>
-<div id="last-updated">Waiting for data...</div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goose Usage Dashboard</title>
+        <script src="./chart.js"></script>
+  <script>
+  if (typeof Chart === 'undefined') {
+    document.body.innerHTML = '<div style="padding:20px;color:#c9d1d9;background:#0d1117;font-family:sans-serif;">' +
+      '<h1>Chart.js failed to load</h1><p>Local chart.js at ./chart.js not found. Check that chart.js exists in the app directory (' + 
+      location.pathname.replace(/\/[^\/]*$/, '/') + 'chart.js).</p></div>';
+  }</script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+            --pink: #f778ba;
+            --orange: #ffa657;
+        }
 
-<div class="kpi-grid" id="kpi-grid">
-<!-- Injected by JS -->
-</div>
+        * {
+            box-sizing: border-box;
+        }
 
-<div class="row row-3">
-<div class="panel"><h3><span class="icon">⚡</span>Last 5 Hours</h3><div class="chart-container"><canvas id="c-last5h"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📅</span>Weekly Usage</h3><div class="chart-container"><canvas id="c-weekly"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📊</span>Monthly Trend</h3><div class="chart-container"><canvas id="c-monthly"></canvas></div></div>
-</div>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100%;
+        }
 
-<div class="row row-2">
-<div class="panel"><h3><span class="icon">🍩</span>Token by Model</h3><div class="chart-container"><canvas id="c-doughnut"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📊</span>Tokens per Session</h3><div class="chart-container"><canvas id="c-horizontal"></canvas></div></div>
-</div>
+        .app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
 
-<div class="row row-2">
-<div class="panel"><h3><span class="icon">📊</span>Input vs Output</h3><div class="chart-container"><canvas id="c-inout"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📈</span>Context Growth</h3><div class="chart-container"><canvas id="c-context"></canvas></div></div>
-</div>
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
 
-<div class="panel" style="margin-bottom:16px">
-<h3><span class="icon">⚠️</span>Anomaly Detection</h3>
-<div id="anomaly-list"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
-</div>
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-<div class="panel" style="margin-bottom:16px">
-<h3><span class="icon">💡</span>Recommendations</h3>
-<div id="recommendation-list"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
-</div>
+        .duck {
+            font-size: 28px;
+        }
 
-<div class="panel" style="margin-bottom:16px">
-<h3><span class="icon">🔀</span>Token Flow</h3>
-<div id="flow-viz" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
-</div>
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.2px;
+        }
 
-<div class="panel">
-<h3><span class="icon">📋</span>Session Details</h3>
-<div id="last-updated-table" style="color:#484f58;font-size:10px;margin-bottom:6px"></div>
-<div class="scroll-table">
-<table>
-<thead><tr><th>Session</th><th>Name</th><th>Model</th><th>Provider</th><th>Created</th><th>Total</th><th>Input</th><th>Output</th><th>Duration</th></tr></thead>
-<tbody id="session-tbody"><tr><td colspan="9" style="text-align:center;color:#8b949e;padding:20px">Loading data.json...</td></tr></tbody>
-</table>
-</div>
-</div>
+        .live {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--green);
+            font-weight: 500;
+        }
 
-<p style="color:#484f58;font-size:10px;margin-top:16px;text-align:center">Goose Ultimate Usage Dashboard · Auto-sync every 5s · data.json</p>
-</div>
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 1.8s infinite;
+        }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.3); }
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .status-bar #last-updated {
+            color: var(--text);
+        }
+
+        .data-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+
+        .status-dot.new {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .status-dot.none {
+            background: var(--yellow);
+        }
+
+        .error-msg {
+            color: var(--red);
+            display: none;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        .kpi-value {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .row.two {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 12px 0;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(22, 27, 34, 0.95);
+            color: var(--muted);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr:hover td {
+            background: rgba(88, 166, 255, 0.06);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-claude { background: rgba(217, 102, 255, 0.15); color: #d96aff; }
+        .badge-gpt { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+        .badge-gemini { background: rgba(255, 166, 87, 0.15); color: #ffa657; }
+        .badge-local { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
+        .badge-other { background: rgba(139, 148, 158, 0.15); color: #8b949e; }
+
+        .warning-box {
+            padding: 12px 14px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            margin-bottom: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .warning-box:last-child { margin-bottom: 0; }
+
+        .warning-high { background: rgba(248, 81, 73, 0.1); border-color: var(--red); color: var(--red); }
+        .warning-med { background: rgba(210, 153, 34, 0.1); border-color: var(--yellow); color: var(--yellow); }
+        .warning-low { background: rgba(63, 185, 80, 0.1); border-color: var(--green); color: var(--green); }
+
+        .rec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .rec-item:last-child { border-bottom: none; }
+
+        .bulb {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 10px 0;
+        }
+
+        .flow-box {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .flow-arrow {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .empty-state {
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .row { grid-template-columns: 1fr; }
+            .row.two { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 700px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .status-bar { flex-direction: column; gap: 8px; align-items: flex-start; }
+        }
+    </style>
+  <script type="application/ld+json">
+{
+  "@context": "urn:goose.ai:schema",
+  "@type": "GooseApp",
+  "name": "goose-usage-dashboard",
+  "description": "Dark-themed live Goose usage dashboard that loads all metrics, charts, and sessions from data.json.",
+  "width": 1400,
+  "height": 900,
+  "resizable": true,
+  "mcpServers": [
+    "apps"
+  ]
+}
+  </script>
+  <script type="application/x-goose-prd">
+# Goose Usage Dashboard — PRD
+
+## Overview
+A dark-themed, auto-refreshing usage dashboard for Goose. The app loads **all** metrics, charts, anomalies, recommendations, provider flow, and session details from a local `data.json` file. No production data is embedded in the HTML; placeholder visuals are shown only when `data.json` is missing.
+
+## Data Loading
+- A global `window.DATA` object holds the latest payload.
+- `loadData()` fetches `./data.json?_=<timestamp>` every 5 seconds via `setInterval` to bust caches.
+- If `data.json` is missing or invalid:
+  - A friendly message "Place data.json in the app directory" is shown.
+  - KPI cards show "—".
+  - Charts render placeholder bars with synthetic values.
+  - Anomalies / recommendations panels show empty states.
+- The status bar reads `Updated <time> ● new data` when the payload changes, or `Updated <time> ● no change` when it is identical to the previous poll.
+
+## Expected `data.json` Schema
+```json
+{
+  "summary": {
+    "total_sessions": 0,
+    "total_tokens": 0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "models_used": 0,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "sessions": [
+    {
+      "id": "string",
+      "name": "string",
+      "model": "string",
+      "provider": "string",
+      "created_at": "ISO-8601",
+      "total_tokens": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "duration_ms": 0,
+      "turns": [0, 0, 0]
+    }
+  ],
+  "usage_ledger": [
+    {
+      "session_id": "string",
+      "created_timestamp": "ISO-8601",
+      "provider_name": "string",
+      "model": "string",
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  ]
+}
+```
+Missing or partial fields are computed from other sections when possible (e.g., totals from sessions, requests from ledger length).
+
+## KPI Cards (10)
+Displayed in a responsive grid (5 → 3 → 2 columns).
+
+| Card | Source |
+|------|--------|
+| Sessions | `summary.total_sessions` (fallback: sessions.length) |
+| Total Tokens | `summary.total_tokens` (fallback: sum of session totals) |
+| Input Tokens | `summary.total_input_tokens` |
+| Output Tokens | `summary.total_output_tokens` |
+| Models Used | `summary.models_used` (fallback: distinct session models) |
+| Requests | `usage_ledger.length` |
+| Avg/Session | `total_tokens / total_sessions` |
+| Cache Rate | `(cache_read + cache_write) / total_tokens × 100` |
+| Peak Context | max `input_tokens` across sessions |
+| Avg Duration | average `duration_ms` across sessions |
+
+Numbers are formatted with `toLocaleString()`. Missing values display "—".
+
+## Charts
+All charts are built from `data.json` using Chart.js.
+
+1. **Last 5 Hours** — bar chart. Buckets `usage_ledger` entries by hour from `created_timestamp` and sums tokens for the latest five hours.
+2. **Weekly Usage** — bar chart. Groups sessions by day-of-week from `created_at` and sums `total_tokens`.
+3. **Monthly Trend** — bar chart. Groups sessions by month from `created_at` and sums `total_tokens`.
+4. **Token by Model** — doughnut chart (60% cutout). Aggregates `total_tokens` per session `model`.
+5. **Tokens per Session** — horizontal bar chart. Top sessions sorted descending by `total_tokens`.
+6. **Input vs Output** — grouped bar chart. Input and output tokens per session for the top sessions.
+7. **Context Growth** — smooth line chart. Plots `input_tokens` over turns for the session with the most ledger entries; falls back to a session's `turns` array.
+
+## Anomaly Detection (Auto-Generated)
+- **Context bloat** (high): any session with `input_tokens > 50,000`.
+- **Empty sessions** (medium): any session with `total_tokens === 0`.
+- **High input ratio** (high): any session with `input_tokens / output_tokens > 50`.
+- **No cache** (medium): `cache_read + cache_write === 0`.
+
+## Recommendations (Auto-Generated)
+- Single model dominance warning when one model exceeds 70% of total tokens.
+- Clean up empty sessions.
+- Split oversized sessions if context > 50K tokens.
+- Enable caching if cache totals are zero.
+- Always-visible tip: export usage data regularly.
+
+## Token Flow Panel
+Displays provider boxes with total tokens and arrows, built from `provider_name` totals in `usage_ledger` (or from session `provider` if no ledger exists).
+
+## Session Details Table
+- Sorted by `created_at` descending.
+- Columns: `id`, `name`, `model` (with colored badge), `provider`, `created_at`, `total_tokens`, `input_tokens`, `output_tokens`, `duration_ms`.
+- Duration is formatted as `1h 23m` or `45m 12s` from milliseconds.
+
+## Theme & Dependencies
+- Dark theme: background `#0d1117`, cards `#161b22`, borders `#30363d`, text `#c9d1d9`, accent `#58a6ff`.
+- Chart.js loaded from `./chart.js`.
+- Responsive layout; app is resizable and works at various widths.
+  </script>
 <script>
-let charts = {};
-let lastDataHash = '';
+  (function(){
+    var tried = [];
+    function loadScript(src, cb){
+      tried.push(src);
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function(){ cb(true); };
+      s.onerror = function(){ cb(false); };
+      document.head.appendChild(s);
+    }
+    function fail(){
+      document.body.innerHTML = '<div style="padding:30px;color:#c9d1d9;background:#0d1117;font-family:sans-serif;max-width:800px;">' +
+        '<h1>Chart.js failed to load</h1>' +
+        '<p>Tried paths: ' + tried.join(', ') + '</p>' +
+        '<p>Current location: ' + location.href + '</p>' +
+        '<p>Please ensure chart.js exists in the app directory.</p>' +
+      '</div>';
+    }
+    // Start after a brief delay to allow initial script tag
+    setTimeout(function(){
+      if (typeof Chart !== 'undefined') return;
+      loadScript('./chart.js', function(ok){
+        if(ok) return;
+        loadScript('file:///C:/Users/LOQ/AppData/Roaming/Block/goose/data/appschart.js', function(ok2){
+          if(ok2) return;
+          loadScript('chart.js', function(ok3){
+            if(!ok3) fail();
+          });
+        });
+      });
+    }, 100);
+  })();
+  </script></head>
+<body>
+    <div class="app">
+        <header>
+            <div class="brand">
+                <span class="duck" aria-hidden="true">🦆</span>
+                <h1>Goose Usage Dashboard</h1>
+            </div>
+            <div class="live">
+                <span class="dot" aria-hidden="true"></span>
+                <span>Live</span>
+            </div>
+        </header>
 
-function fmt(n){return n==null?'—':Number(n).toLocaleString()}
-function fmtPct(a,b){return b?((a/b)*100).toFixed(1)+'%':'0%'}
-function fmtDur(ms){
-  if(!ms||ms<=0)return '—';
-  let s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
-  if(h)return h+'h '+(m%60)+'m';
-  if(m)return m+'m '+(s%60)+'s';
-  return s+'s';
-}
+        <div class="status-bar">
+            <div>
+                <span id="last-updated">Updated --</span>
+                <span class="data-status" id="data-status"></span>
+            </div>
+            <span class="error-msg" id="error-msg">Place data.json in the app directory</span>
+        </div>
 
-async function loadData(){
-  try{
-    const res = await fetch('./data.json?_='+Date.now());
-    if(!res.ok) throw new Error(res.status+' '+res.statusText);
-    const d = await res.json();
-    // simple hash to detect changes
-    const hash = JSON.stringify(d).length + (d.summary?.total_tokens||0);
-    const changed = hash !== lastDataHash;
-    lastDataHash = hash;
-    return {data:d,changed};
-  }catch(e){
-    return {error:e.message};
-  }
-}
+        <div class="kpi-grid" id="kpi-grid"></div>
 
-function destroyCharts(){
-  Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy();});
-  charts={};
-}
+        <div class="row">
+            <div class="panel">
+                <h2 class="panel-title">Last 5 Hours</h2>
+                <div class="chart-wrapper"><canvas id="chart-hours"></canvas></div>
+            </div>
+            <div class="panel">
+                <h2 class="panel-title">Weekly Usage</h2>
+                <div class="chart-wrapper"><canvas id="chart-weekly"></canvas></div>
+            </div>
+            <div class="panel">
+                <h2 class="panel-title">Monthly Trend</h2>
+                <div class="chart-wrapper"><canvas id="chart-monthly"></canvas></div>
+            </div>
+        </div>
 
-function buildKPIs(data,prevSummary){
-  const s=data.summary||{};
-  const now={sessions:s.total_sessions||0,total:s.total_tokens||0,input:s.total_input_tokens||0,output:s.total_output_tokens||0,models:s.models_used||0};
-  const prev=prevSummary||{};
-  function trend(key,label,reverse=false){
-    const curr=now[key],old=prev[key];
-    if(old==null||curr===old) return '<div class="trend neutral">— '+label+'</div>';
-    const up=(curr>old)^(reverse);
-    const cls=up?'up':'down',sym=up?'▲':'▼',pct=old?((Math.abs(curr-old)/old)*100).toFixed(1):'∞';
-    return '<div class="trend '+cls+'">'+sym+' '+pct+'% '+label+'</div>';
-  }
+        <div class="row two">
+            <div class="panel">
+                <h2 class="panel-title">Token by Model</h2>
+                <div class="chart-wrapper"><canvas id="chart-model"></canvas></div>
+            </div>
+            <div class="panel">
+                <h2 class="panel-title">Tokens per Session</h2>
+                <div class="chart-wrapper"><canvas id="chart-session"></canvas></div>
+            </div>
+        </div>
 
-  // Extra metrics
-  const sessions=data.sessions||[];
-  const ledger=data.usage_ledger||[];
-  const avgPerSession = now.sessions ? Math.round(now.total/now.sessions) : 0;
-  const avgPerRequest = ledger.length ? Math.round(now.total/ledger.length) : 0;
-  const cacheRead = sessions.reduce((a,s)=>a+(s.cache_read_tokens||0),0);
-  const cacheWrite = sessions.reduce((a,s)=>a+(s.cache_write_tokens||0),0);
-  const cacheRate = now.total ? ((cacheRead+cacheWrite)/now.total*100).toFixed(1) : '0.0';
-  const maxCtx = sessions.length ? Math.max(...sessions.map(s=>s.input_tokens||0)) : 0;
-  const maxCtxSession = sessions.find(s=>(s.input_tokens||0)===maxCtx);
-  const totalDur = sessions.reduce((a,s)=>a+((s.duration_ms||0)),0);
-  const costEst = (now.total/1000000*2.0).toFixed(2); // rough $2 per 1M tok placeholder
+        <div class="row two">
+            <div class="panel">
+                <h2 class="panel-title">Input vs Output</h2>
+                <div class="chart-wrapper"><canvas id="chart-inout"></canvas></div>
+            </div>
+            <div class="panel">
+                <h2 class="panel-title">Context Growth</h2>
+                <div class="chart-wrapper"><canvas id="chart-context"></canvas></div>
+            </div>
+        </div>
 
-  const cards=[
-    {t:trend('sessions','vs last'),v:fmt(now.sessions),l:'Sessions'},
-    {t:trend('total','vs last'),v:fmt(now.total),l:'Total Tokens'},
-    {t:trend('input','vs last'),v:fmt(now.input),l:'Input Tokens'},
-    {t:trend('output','vs last'),v:fmt(now.output),l:'Output Tokens'},
-    {t:'<div class="trend neutral">Ratio '+(now.output?(now.input/now.output).toFixed(1):'∞')+':1</div>',v:fmt(now.models),l:'Models'},
-    {t:'<div class="trend neutral">$'+costEst+' est</div>',v:fmt(avgPerSession),l:'Avg / Session'},
-    {t:'<div class="trend neutral">'+fmt(avgPerRequest)+' avg</div>',v:fmt(ledger.length),l:'Requests'},
-    {t:'<div class="trend neutral">'+cacheRate+'% cache</div>',v:fmt(cacheRead+cacheWrite),l:'Cache Tokens'},
-    {t:'<div class="trend neutral">'+(maxCtxSession?maxCtxSession.name?.slice(0,12)||'Max':'—')+'</div>',v:fmt(maxCtx),l:'Peak Context'},
-    {t:'<div class="trend neutral">'+fmtDur(totalDur)+' total</div>',v:fmtDur(totalDur/now.sessions),l:'Avg Duration'}
-  ];
+        <div class="row two">
+            <div class="panel">
+                <h2 class="panel-title">Anomaly Detection</h2>
+                <div id="anomaly-list">
+                    <div class="empty-state">No anomalies detected.</div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2 class="panel-title">Recommendations</h2>
+                <div id="recommendation-list">
+                    <div class="empty-state">No recommendations available.</div>
+                </div>
+            </div>
+        </div>
 
-  document.getElementById('kpi-grid').innerHTML=cards.map(c=>
-    '<div class="kpi-card">'+c.t+'<div class="value">'+c.v+'</div><div class="label">'+c.l+'</div></div>'
-  ).join('');
-}
+        <div class="panel" style="margin-bottom:16px;">
+            <h2 class="panel-title">Token Flow</h2>
+            <div class="flow" id="token-flow">
+                <span class="empty-state" style="padding:0;text-align:left;">No provider flow data.</span>
+            </div>
+        </div>
 
-function buildCharts(data){
-  destroyCharts();
-  const sessions=data.sessions||[];
-  const ledger=data.usage_ledger||[];
+        <div class="panel">
+            <h2 class="panel-title">Session Details</h2>
+            <div class="table-scroll">
+                <table id="session-table">
+                    <thead>
+                        <tr>
+                            <th>Session</th>
+                            <th>Name</th>
+                            <th>Model</th>
+                            <th>Provider</th>
+                            <th>Created</th>
+                            <th>Total</th>
+                            <th>Input</th>
+                            <th>Output</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="session-body">
+                        <tr><td colspan="9" class="empty-state">Place data.json in the app directory</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-  // Color palette per model
-  const modelColors={};
-  const palette=['#58a6ff','#f0883e','#3fb950','#bc8cff','#f85149','#d29922','#79c0ff','#ff7b72'];
-  let ci=0;
-  sessions.forEach(s=>{if(!modelColors[s.model])modelColors[s.model]=palette[ci++%palette.length];});
+    <script>
+        // ---- Global data object and state ----
+        window.DATA = {};
+        const charts = {};
+        let previousHash = null;
+        let hasDataFile = false;
 
-  // 1. Last 5 Hours — bucket by hour from ledger timestamps
-  const nowTs=Date.now();
-  const fiveH=nowTs-5*3600*1000;
-  const recent=ledger.filter(l=>new Date(l.created_timestamp||l.created_at||0).getTime()>fiveH);
-  const buckets={};
-  recent.forEach(l=>{
-    const d=new Date(l.created_timestamp||l.created_at||0);
-    const key=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-    buckets[key]=(buckets[key]||0)+(l.total_tokens||0);
-  });
-  const l5hLabels=Object.keys(buckets).sort();
-  const l5hData=l5hLabels.map(k=>buckets[k]);
-  charts.last5h=new Chart(document.getElementById('c-last5h').getContext('2d'),{
-    type:'bar',
-    data:{labels:l5hLabels.length?l5hLabels:['No recent data'],datasets:[{label:'Tokens',data:l5hLabels.length?l5hData:[0],backgroundColor:'#58a6ff'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        const POLL_INTERVAL = 5000;
+        const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // 2. Weekly — group by day
-  const dayMap={};
-  sessions.forEach(s=>{
-    const d=new Date(s.created_at||0);
-    const key=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    dayMap[key]=(dayMap[key]||0)+(s.total_tokens||0);
-  });
-  charts.weekly=new Chart(document.getElementById('c-weekly').getContext('2d'),{
-    type:'bar',
-    data:{labels:Object.keys(dayMap),datasets:[{label:'Tokens',data:Object.values(dayMap),backgroundColor:'#f0883e'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        const MODEL_COLORS = {
+            claude: '#d96aff',
+            gpt: '#58a6ff',
+            gemini: '#ffa657',
+            local: '#3fb950',
+            other: '#8b949e'
+        };
 
-  // 3. Monthly — aggregate by month
-  const monthMap={};
-  sessions.forEach(s=>{
-    const d=new Date(s.created_at||0);
-    const key=d.toLocaleDateString('en-US',{year:'numeric',month:'short'});
-    monthMap[key]=(monthMap[key]||0)+(s.total_tokens||0);
-  });
-  charts.monthly=new Chart(document.getElementById('c-monthly').getContext('2d'),{
-    type:'bar',
-    data:{labels:Object.keys(monthMap),datasets:[{label:'Tokens',data:Object.values(monthMap),backgroundColor:'#3fb950'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        // ---- Helpers ----
+        function formatNumber(num) {
+            if (num === null || num === undefined || (typeof num === 'number' && isNaN(num))) return '—';
+            return Math.round(num).toLocaleString();
+        }
 
-  // 4. Doughnut by model
-  const modelTotals={};
-  sessions.forEach(s=>{modelTotals[s.model]=(modelTotals[s.model]||0)+(s.total_tokens||0);});
-  charts.doughnut=new Chart(document.getElementById('c-doughnut').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:Object.keys(modelTotals),datasets:[{data:Object.values(modelTotals),backgroundColor:Object.keys(modelTotals).map(m=>modelColors[m]||'#58a6ff'),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%'}
-  });
+        function formatDurationMs(ms) {
+            if (ms === null || ms === undefined || (typeof ms === 'number' && isNaN(ms))) return '—';
+            const totalSeconds = Math.floor(ms / 1000);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m ${s}s`;
+        }
 
-  // 5. Horizontal per session
-  const sorted=sessions.slice().sort((a,b)=>(b.total_tokens||0)-(a.total_tokens||0));
-  charts.horizontal=new Chart(document.getElementById('c-horizontal').getContext('2d'),{
-    type:'bar',
-    data:{labels:sorted.map(s=>s.name?.slice(0,20)||s.id),datasets:[{label:'Tokens',data:sorted.map(s=>s.total_tokens||0),backgroundColor:sorted.map(s=>modelColors[s.model]||'#58a6ff')}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        function parseTimestamp(ts) {
+            if (!ts) return null;
+            const d = new Date(ts);
+            return isNaN(d.getTime()) ? null : d;
+        }
 
-  // 6. Input vs Output
-  charts.inout=new Chart(document.getElementById('c-inout').getContext('2d'),{
-    type:'bar',
-    data:{labels:sorted.slice(0,6).map(s=>s.name?.slice(0,16)||s.id),datasets:[
-      {label:'Input',data:sorted.slice(0,6).map(s=>s.input_tokens||0),backgroundColor:'#58a6ff'},
-      {label:'Output',data:sorted.slice(0,6).map(s=>s.output_tokens||0),backgroundColor:'#3fb950'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        function getModelBadgeClass(modelName) {
+            const name = (modelName || '').toLowerCase();
+            if (name.includes('claude')) return 'badge-claude';
+            if (name.includes('gpt')) return 'badge-gpt';
+            if (name.includes('gemini')) return 'badge-gemini';
+            if (name.includes('local') || name.includes('ollama') || name.includes('llama')) return 'badge-local';
+            return 'badge-other';
+        }
 
-  // 7. Context growth — find session with most ledger entries and plot input over turns
-  const bySession={};
-  ledger.forEach(l=>{bySession[l.session_id]=(bySession[l.session_id]||[]);bySession[l.session_id].push(l);});
-  let maxLen=0,maxId=null;
-  Object.entries(bySession).forEach(([id,arr])=>{if(arr.length>maxLen){maxLen=arr.length;maxId=id;}});
-  const ctxData=maxId?bySession[maxId].map((l,i)=>l.input_tokens||0).slice(0,25):[];
-  charts.context=new Chart(document.getElementById('c-context').getContext('2d'),{
-    type:'line',
-    data:{labels:ctxData.length?ctxData.map((_,i)=>'T'+(i+1)):['No data'],datasets:[{
-      label:'Context',data:ctxData.length?ctxData:[0],
-      borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,0.1)',fill:true,tension:0.4,pointRadius:2
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
-  });
+        function hashData(data) {
+            try {
+                return JSON.stringify({
+                    summary: data?.summary,
+                    ledgerCount: data?.usage_ledger?.length,
+                    sessionsCount: data?.sessions?.length,
+                    sessionTokens: data?.sessions?.map(s => (s.id || '') + ':' + (s.total_tokens || 0)).join('|')
+                });
+            } catch (e) {
+                return '';
+            }
+        }
 
-  // 8. Anomalies
-  const anomalies=[];
-  const maxCtxS=sessions.reduce((m,s)=>(s.input_tokens||0)>m?s.input_tokens||0:m,0);
-  if(maxCtxS>50000) anomalies.push({c:'warning',t:'🚨 <strong>Context bloat</strong> — peak context '+fmt(maxCtxS)+' tokens. Consider compaction.'});
-  const empties=sessions.filter(s=>!(s.total_tokens||0));
-  if(empties.length) anomalies.push({c:'danger',t:'🔴 <strong>Empty sessions</strong> — '+empties.length+' session(s) with zero tokens (possible failures).'});
-  const ratio=now.output?now.input/now.output:0;
-  if(ratio>50) anomalies.push({c:'info',t:'ℹ️ <strong>High input ratio</strong> — '+ratio.toFixed(1)+':1. Typical for agentic tool-output workflows.'});
-  const cacheTot=sessions.reduce((a,s)=>a+(s.cache_read_tokens||0)+(s.cache_write_tokens||0),0);
-  if(!cacheTot) anomalies.push({c:'info',t:'ℹ️ <strong>No cache usage</strong> — cache reads/writes are zero. Enable caching if supported.'});
-  document.getElementById('anomaly-list').innerHTML=anomalies.length?anomalies.map(a=>'<div class="anomaly-item '+a.c+'">'+a.t+'</div>').join(''):'<p style="color:#8b949e;font-size:12px">No anomalies detected.</p>';
+        function placeholderValues(count) {
+            return Array.from({ length: count }, (_, i) => (i + 1) * 1000);
+        }
 
-  // 9. Recommendations
-  const recs=[];
-  if(Object.keys(modelTotals).length===1){
-    const m=Object.keys(modelTotals)[0];
-    recs.push({i:'💡',t:'<strong>Single model dominance</strong> — '+m+' handles 100% of tokens. Test smaller models for simple tasks.'});
-  }
-  if(empties.length) recs.push({i:'⚠️',t:'<strong>Clean up empty sessions</strong> — '+empties.length+' idle session(s) waste context window space.'});
-  if(maxCtxS>50000) recs.push({i:'🔄',t:'<strong>Session splitting</strong> — restart after ~50K context to reduce cost and latency.'});
-  if(!cacheTot) recs.push({i:'💾',t:'<strong>Enable caching</strong> — no cache tokens detected. Caching can reduce costs 20-40%.'});
-  recs.push({i:'📊',t:'<strong>Export regularly</strong> — run extract_data.py in a cron/scheduled task to keep this dashboard current.'});
-  document.getElementById('recommendation-list').innerHTML=recs.map(r=>'<div class="recommendation-item"><span class="icon">'+r.i+'</span><div>'+r.t+'</div></div>').join('');
+        // ---- Data extraction ----
+        function getSummary(data) {
+            const summary = data?.summary || {};
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const ledger = Array.isArray(data?.usage_ledger) ? data.usage_ledger : [];
 
-  // 10. Flow
-  const providerMap={};
-  sessions.forEach(s=>{providerMap[s.provider_name||s.provider||'Unknown']=(providerMap[s.provider_name||s.provider||'Unknown']||0)+(s.total_tokens||0);});
-  let flowHtml='';
-  Object.entries(providerMap).forEach(([prov,tok],i)=>{
-    const color=palette[i%palette.length];
-    flowHtml+='<div class="flow-box" style="border-color:'+color+';color:'+color+'">'+prov+'<br><small>'+fmt(tok)+'</small></div>';
-    if(i<Object.keys(providerMap).length-1) flowHtml+='<span class="flow-arrow">→</span>';
-  });
-  document.getElementById('flow-viz').innerHTML=flowHtml||'<p style="color:#8b949e;font-size:12px">No provider data.</p>';
+            const totalSessions = summary.total_sessions ?? sessions.length;
+            const totalTokens = summary.total_tokens ?? sessions.reduce((a, s) => a + (Number(s.total_tokens) || 0), 0);
+            const inputTokens = summary.total_input_tokens ?? sessions.reduce((a, s) => a + (Number(s.input_tokens) || 0), 0);
+            const outputTokens = summary.total_output_tokens ?? sessions.reduce((a, s) => a + (Number(s.output_tokens) || 0), 0);
+            const cacheRead = summary.cache_read ?? 0;
+            const cacheWrite = summary.cache_write ?? 0;
+            const modelsUsed = summary.models_used ?? (sessions.length ? new Set(sessions.map(s => s.model).filter(Boolean)).size : 0);
 
-  // 11. Table
-  const tbody=sessions.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  document.getElementById('session-tbody').innerHTML=tbody.map(s=>{
-    const mc=modelColors[s.model]||'#58a6ff';
-    return '<tr>'+
-      '<td>'+(s.id||'—').slice(0,14)+'</td>'+
-      '<td>'+(s.name||'—').slice(0,22)+'</td>'+
-      '<td><span class="badge" style="background:'+mc+'22;color:'+mc+'">'+(s.model||'—')+'</span></td>'+
-      '<td>'+(s.provider_name||s.provider||'—')+'</td>'+
-      '<td>'+(s.created_at?new Date(s.created_at).toLocaleDateString():'—')+'</td>'+
-      '<td style="text-align:right">'+fmt(s.total_tokens)+'</td>'+
-      '<td style="text-align:right">'+fmt(s.input_tokens)+'</td>'+
-      '<td style="text-align:right">'+fmt(s.output_tokens)+'</td>'+
-      '<td>'+fmtDur(s.duration_ms||0)+'</td>'+
-    '</tr>';
-  }).join('');
-}
+            return {
+                totalSessions,
+                totalTokens,
+                inputTokens,
+                outputTokens,
+                cacheRead,
+                cacheWrite,
+                modelsUsed,
+                requests: ledger.length
+            };
+        }
 
-let previousSummary=null;
+        function getLast5Hours(data) {
+            const ledger = data?.usage_ledger || [];
+            if (!ledger.length) {
+                return { labels: ['-4h','-3h','-2h','-1h','Now'], values: placeholderValues(5) };
+            }
+            const buckets = {};
+            ledger.forEach(entry => {
+                const d = parseTimestamp(entry.created_timestamp);
+                if (!d) return;
+                const key = d.toISOString().slice(0, 13);
+                const tokens = (Number(entry.input_tokens) || 0) + (Number(entry.output_tokens) || 0);
+                buckets[key] = (buckets[key] || 0) + tokens;
+            });
+            const sortedKeys = Object.keys(buckets).sort();
+            const last5 = sortedKeys.slice(-5);
+            const labels = last5.map(k => {
+                const d = new Date(k + ':00:00Z');
+                return d.toLocaleTimeString([], { hour: 'numeric', hour12: true });
+            });
+            const values = last5.map(k => buckets[k]);
+            while (labels.length < 5) { labels.unshift('--'); values.unshift(0); }
+            return { labels, values };
+        }
 
-async function render(){
-  const r=await loadData();
-  if(r.error){
-    document.getElementById('last-updated').textContent='Error loading data.json: '+r.error;
-    return;
-  }
-  const d=r.data;
-  buildKPIs(d,previousSummary);
-  buildCharts(d);
-  previousSummary=d.summary;
-  const ts=new Date().toLocaleTimeString();
-  document.getElementById('last-updated').textContent='Updated '+ts+(r.changed?' ● new data':' ● no change');
-  document.getElementById('last-updated-table').textContent='Updated '+ts;
-}
+        function getWeekly(data) {
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const buckets = {};
+            DAY_NAMES.forEach(d => buckets[d] = 0);
+            sessions.forEach(s => {
+                const d = parseTimestamp(s.created_at);
+                if (!d) return;
+                buckets[DAY_NAMES[d.getDay()]] += Number(s.total_tokens) || 0;
+            });
+            return { labels: DAY_NAMES, values: DAY_NAMES.map(d => buckets[d]) };
+        }
 
-// Initial render + 5s polling
-render();
-setInterval(render,5000);
-</script>
+        function getMonthly(data) {
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const buckets = {};
+            MONTH_NAMES.forEach(m => buckets[m] = 0);
+            sessions.forEach(s => {
+                const d = parseTimestamp(s.created_at);
+                if (!d) return;
+                buckets[MONTH_NAMES[d.getMonth()]] += Number(s.total_tokens) || 0;
+            });
+            return { labels: MONTH_NAMES, values: MONTH_NAMES.map(m => buckets[m]) };
+        }
+
+        function getModelTotals(data) {
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const totals = {};
+            sessions.forEach(s => {
+                const model = s.model || 'Unknown';
+                totals[model] = (totals[model] || 0) + Number(s.total_tokens) || 0;
+            });
+            return { labels: Object.keys(totals), values: Object.values(totals) };
+        }
+
+        function getTokensPerSession(data) {
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const sorted = [...sessions]
+                .sort((a, b) => (Number(b.total_tokens) || 0) - (Number(a.total_tokens) || 0))
+                .slice(0, 12);
+            return {
+                labels: sorted.map(s => s.name || s.id || 'Session'),
+                values: sorted.map(s => Number(s.total_tokens) || 0)
+            };
+        }
+
+        function getInputVsOutput(data) {
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const sorted = [...sessions]
+                .sort((a, b) => (Number(b.total_tokens) || 0) - (Number(a.total_tokens) || 0))
+                .slice(0, 12);
+            return {
+                labels: sorted.map(s => s.name || s.id || 'Session'),
+                input: sorted.map(s => Number(s.input_tokens) || 0),
+                output: sorted.map(s => Number(s.output_tokens) || 0)
+            };
+        }
+
+        function getContextGrowth(data) {
+            const ledger = Array.isArray(data?.usage_ledger) ? data.usage_ledger : [];
+            const counts = {};
+            ledger.forEach(e => {
+                counts[e.session_id] = (counts[e.session_id] || 0) + 1;
+            });
+            let topId = null;
+            let topCount = 0;
+            Object.entries(counts).forEach(([id, count]) => {
+                if (count > topCount) { topCount = count; topId = id; }
+            });
+
+            if (topId) {
+                const entries = ledger
+                    .filter(e => e.session_id === topId)
+                    .sort((a, b) => parseTimestamp(a.created_timestamp) - parseTimestamp(b.created_timestamp));
+                return {
+                    labels: entries.map((_, i) => `Turn ${i + 1}`),
+                    values: entries.map(e => Number(e.input_tokens) || 0)
+                };
+            }
+
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const withTurns = sessions.find(s => Array.isArray(s.turns) && s.turns.length);
+            if (withTurns) {
+                return {
+                    labels: withTurns.turns.map((_, i) => `Turn ${i + 1}`),
+                    values: withTurns.turns.map(v => Number(v) || 0)
+                };
+            }
+
+            return { labels: ['No data'], values: [0] };
+        }
+
+        function getProviderFlow(data) {
+            const ledger = Array.isArray(data?.usage_ledger) ? data.usage_ledger : [];
+            if (ledger.length) {
+                const totals = {};
+                ledger.forEach(e => {
+                    const p = e.provider_name || 'Unknown';
+                    totals[p] = (totals[p] || 0) + (Number(e.input_tokens) || 0) + (Number(e.output_tokens) || 0);
+                });
+                return Object.entries(totals).map(([name, tokens]) => ({ name, tokens }));
+            }
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const totals = {};
+            sessions.forEach(s => {
+                const p = s.provider || 'Unknown';
+                totals[p] = (totals[p] || 0) + Number(s.total_tokens) || 0;
+            });
+            return Object.entries(totals).map(([name, tokens]) => ({ name, tokens }));
+        }
+
+        function generateAnomalies(data) {
+            const anomalies = [];
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const summary = data?.summary || {};
+
+            const bloat = sessions.filter(s => Number(s.input_tokens) > 50000);
+            if (bloat.length) {
+                anomalies.push({ level: 'high', title: 'Context bloat detected', message: `${bloat.length} session(s) exceed 50K input tokens.` });
+            }
+
+            const empty = sessions.filter(s => Number(s.total_tokens) === 0);
+            if (empty.length) {
+                anomalies.push({ level: 'med', title: 'Empty sessions', message: `${empty.length} session(s) recorded zero tokens.` });
+            }
+
+            const highRatio = sessions.filter(s => Number(s.output_tokens) > 0 && (Number(s.input_tokens) / Number(s.output_tokens)) > 50);
+            if (highRatio.length) {
+                anomalies.push({ level: 'high', title: 'High input/output ratio', message: `${highRatio.length} session(s) have input/output ratio > 50.` });
+            }
+
+            const cacheTotal = (Number(summary.cache_read) || 0) + (Number(summary.cache_write) || 0);
+            if (cacheTotal === 0) {
+                anomalies.push({ level: 'med', title: 'No cache activity', message: 'Cache read and write totals are both zero.' });
+            }
+
+            return anomalies;
+        }
+
+        function generateRecommendations(data) {
+            const recs = [];
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+            const summary = data?.summary || {};
+            const summaryTotal = Number(summary.total_tokens) || 0;
+
+            const modelTotals = {};
+            sessions.forEach(s => {
+                const m = s.model || 'Unknown';
+                modelTotals[m] = (modelTotals[m] || 0) + Number(s.total_tokens) || 0;
+            });
+            const totalTokens = summaryTotal || sessions.reduce((a, s) => a + (Number(s.total_tokens) || 0), 0);
+            const top = Object.entries(modelTotals).sort((a, b) => b[1] - a[1])[0];
+            if (top && totalTokens && top[1] / totalTokens > 0.7) {
+                recs.push(`Single model dominance: ${top[0]} accounts for ${((top[1] / totalTokens) * 100).toFixed(0)}% of tokens. Consider diversifying.`);
+            }
+
+            const empty = sessions.filter(s => Number(s.total_tokens) === 0);
+            if (empty.length) {
+                recs.push(`Clean up ${empty.length} empty session(s) to reduce clutter.`);
+            }
+
+            const bloat = sessions.filter(s => Number(s.input_tokens) > 50000);
+            if (bloat.length) {
+                recs.push(`Split ${bloat.length} oversized session(s) with >50K input tokens into smaller contexts.`);
+            }
+
+            const cacheTotal = (Number(summary.cache_read) || 0) + (Number(summary.cache_write) || 0);
+            if (cacheTotal === 0) {
+                recs.push('Enable caching to reduce token costs and latency.');
+            }
+
+            recs.push('Export usage data regularly for long-term analysis and backups.');
+            return recs;
+        }
+
+        // ---- Renderers ----
+        function renderKpis(data) {
+            const grid = document.getElementById('kpi-grid');
+            const s = getSummary(data || {});
+            const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+
+            const avgPerSession = s.totalSessions ? s.totalTokens / s.totalSessions : null;
+            const cacheRate = s.totalTokens ? ((s.cacheRead + s.cacheWrite) / s.totalTokens) * 100 : null;
+            const peakContext = sessions.length ? Math.max(...sessions.map(s => Number(s.input_tokens) || 0)) : null;
+            const avgDuration = sessions.length
+                ? sessions.reduce((a, s) => a + (Number(s.duration_ms) || 0), 0) / sessions.length
+                : null;
+
+            const metrics = [
+                { label: 'Sessions', value: formatNumber(s.totalSessions) },
+                { label: 'Total Tokens', value: formatNumber(s.totalTokens) },
+                { label: 'Input Tokens', value: formatNumber(s.inputTokens) },
+                { label: 'Output Tokens', value: formatNumber(s.outputTokens) },
+                { label: 'Models Used', value: formatNumber(s.modelsUsed) },
+                { label: 'Requests', value: formatNumber(s.requests) },
+                { label: 'Avg/Session', value: formatNumber(avgPerSession) },
+                { label: 'Cache Rate', value: cacheRate !== null ? `${cacheRate.toFixed(1)}%` : '—' },
+                { label: 'Peak Context', value: formatNumber(peakContext) },
+                { label: 'Avg Duration', value: formatDurationMs(avgDuration) }
+            ];
+
+            grid.innerHTML = metrics.map(m => `
+                <div class="kpi-card">
+                    <div class="kpi-value">${m.value}</div>
+                    <div class="kpi-label">${m.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function baseChartOptions(override = {}) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#c9d1d9', font: { size: 12 } } }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8b949e', font: { size: 11 } },
+                        grid: { color: '#30363d' },
+                        border: { color: '#30363d' }
+                    },
+                    y: {
+                        ticks: { color: '#8b949e', font: { size: 11 } },
+                        grid: { color: '#30363d' },
+                        border: { color: '#30363d' }
+                    }
+                },
+                ...override
+            };
+        }
+
+        function makeBarChart(ctx, labels, dataset, options = {}) {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: dataset.label,
+                        data: dataset.data,
+                        backgroundColor: dataset.backgroundColor || 'rgba(88, 166, 255, 0.7)',
+                        borderColor: dataset.borderColor || '#58a6ff',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: baseChartOptions(options)
+            });
+        }
+
+        function updateChart(key, factory) {
+            const canvas = document.getElementById('chart-' + key);
+            if (!canvas) return;
+            if (charts[key]) charts[key].destroy();
+            charts[key] = factory(canvas.getContext('2d'));
+        }
+
+        function renderCharts(data) {
+            const hasReal = !!data;
+
+            updateChart('hours', ctx => {
+                const d = hasReal ? getLast5Hours(data) : { labels: ['-4h','-3h','-2h','-1h','Now'], values: placeholderValues(5) };
+                return makeBarChart(ctx, d.labels, { label: 'Tokens', data: d.values, backgroundColor: 'rgba(88, 166, 255, 0.7)', borderColor: '#58a6ff' });
+            });
+
+            updateChart('weekly', ctx => {
+                const d = hasReal ? getWeekly(data) : { labels: DAY_NAMES, values: placeholderValues(7) };
+                return makeBarChart(ctx, d.labels, { label: 'Tokens', data: d.values, backgroundColor: 'rgba(163, 113, 247, 0.7)', borderColor: '#a371f7' });
+            });
+
+            updateChart('monthly', ctx => {
+                const d = hasReal ? getMonthly(data) : { labels: MONTH_NAMES, values: placeholderValues(12) };
+                return makeBarChart(ctx, d.labels, { label: 'Tokens', data: d.values, backgroundColor: 'rgba(63, 185, 80, 0.7)', borderColor: '#3fb950' });
+            });
+
+            updateChart('model', ctx => {
+                const d = hasReal ? getModelTotals(data) : { labels: ['No data'], values: [1] };
+                const colors = d.labels.map((_, i) => Object.values(MODEL_COLORS)[i % Object.values(MODEL_COLORS).length]);
+                return new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: d.labels,
+                        datasets: [{
+                            data: d.values,
+                            backgroundColor: colors,
+                            borderColor: '#161b22',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { position: 'right', labels: { color: '#c9d1d9', font: { size: 12 }, boxWidth: 14 } }
+                        }
+                    }
+                });
+            });
+
+            updateChart('session', ctx => {
+                const d = hasReal ? getTokensPerSession(data) : { labels: ['S1','S2','S3','S4','S5'], values: placeholderValues(5).reverse() };
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [{
+                            label: 'Tokens',
+                            data: d.values,
+                            backgroundColor: 'rgba(255, 166, 87, 0.7)',
+                            borderColor: '#ffa657',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: baseChartOptions({
+                        indexAxis: 'y',
+                        scales: {
+                            x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, border: { color: '#30363d' } },
+                            y: { ticks: { color: '#c9d1d9' }, grid: { color: '#30363d' }, border: { color: '#30363d' } }
+                        }
+                    })
+                });
+            });
+
+            updateChart('inout', ctx => {
+                const d = hasReal ? getInputVsOutput(data) : {
+                    labels: ['S1','S2','S3','S4','S5'],
+                    input: placeholderValues(5).map(v => Math.floor(v * 0.45)),
+                    output: placeholderValues(5).map(v => Math.floor(v * 0.55))
+                };
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'Input', data: d.input, backgroundColor: 'rgba(88, 166, 255, 0.7)', borderColor: '#58a6ff', borderWidth: 1, borderRadius: 3 },
+                            { label: 'Output', data: d.output, backgroundColor: 'rgba(247, 120, 186, 0.7)', borderColor: '#f778ba', borderWidth: 1, borderRadius: 3 }
+                        ]
+                    },
+                    options: baseChartOptions()
+                });
+            });
+
+            updateChart('context', ctx => {
+                const d = hasReal ? getContextGrowth(data) : { labels: ['T1','T2','T3','T4','T5'], values: placeholderValues(5) };
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: d.labels,
+                        datasets: [{
+                            label: 'Input Tokens',
+                            data: d.values,
+                            borderColor: '#3fb950',
+                            backgroundColor: 'rgba(63, 185, 80, 0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3fb950',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: baseChartOptions({
+                        scales: {
+                            x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, border: { color: '#30363d' } },
+                            y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, border: { color: '#30363d' } }
+                        }
+                    })
+                });
+            });
+        }
+
+        function renderAnomalies(data) {
+            const list = document.getElementById('anomaly-list');
+            const anomalies = data ? generateAnomalies(data) : [];
+            if (!anomalies.length) {
+                list.innerHTML = '<div class="empty-state">No anomalies detected.</div>';
+                return;
+            }
+            list.innerHTML = anomalies.map(a => {
+                const cls = a.level === 'high' ? 'warning-high' : (a.level === 'med' || a.level === 'medium' ? 'warning-med' : 'warning-low');
+                return `<div class="warning-box ${cls}"><strong>${a.title}</strong> — ${a.message}</div>`;
+            }).join('');
+        }
+
+        function renderRecommendations(data) {
+            const list = document.getElementById('recommendation-list');
+            const recs = data ? generateRecommendations(data) : [];
+            if (!recs.length) {
+                list.innerHTML = '<div class="empty-state">No recommendations available.</div>';
+                return;
+            }
+            list.innerHTML = recs.map(r => `
+                <div class="rec-item">
+                    <span class="bulb" aria-hidden="true">💡</span>
+                    <span>${r}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTokenFlow(data) {
+            const container = document.getElementById('token-flow');
+            const providers = data ? getProviderFlow(data) : [];
+            if (!providers.length) {
+                container.innerHTML = '<span class="empty-state" style="padding:0;text-align:left;">No provider flow data.</span>';
+                return;
+            }
+            let html = '';
+            providers.forEach((p, idx) => {
+                html += `<div class="flow-box">${p.name} (${formatNumber(p.tokens)})</div>`;
+                if (idx < providers.length - 1) html += `<span class="flow-arrow">→</span>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderSessions(data) {
+            const tbody = document.getElementById('session-body');
+            const errorMsg = document.getElementById('error-msg');
+            const sessions = data?.sessions
+                ? [...data.sessions].sort((a, b) => (parseTimestamp(b.created_at) || 0) - (parseTimestamp(a.created_at) || 0))
+                : [];
+
+            if (!sessions.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state">${hasDataFile ? 'No sessions recorded.' : 'Place data.json in the app directory'}</td></tr>`;
+                errorMsg.style.display = hasDataFile ? 'none' : 'inline';
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            tbody.innerHTML = sessions.map(s => `
+                <tr>
+                    <td>${s.id || '—'}</td>
+                    <td>${s.name || '—'}</td>
+                    <td><span class="badge ${getModelBadgeClass(s.model)}">${s.model || '—'}</span></td>
+                    <td>${s.provider || '—'}</td>
+                    <td>${s.created_at ? new Date(s.created_at).toLocaleString() : '—'}</td>
+                    <td>${formatNumber(s.total_tokens)}</td>
+                    <td>${formatNumber(s.input_tokens)}</td>
+                    <td>${formatNumber(s.output_tokens)}</td>
+                    <td>${formatDurationMs(s.duration_ms)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateDashboard(data, changed) {
+            const timeStr = new Date().toLocaleTimeString();
+            const statusEl = document.getElementById('data-status');
+
+            document.getElementById('last-updated').textContent = `Updated ${timeStr}`;
+
+            if (!data) {
+                statusEl.innerHTML = '<span class="status-dot none"></span> no data';
+            } else if (changed) {
+                statusEl.innerHTML = '<span class="status-dot new"></span> new data';
+            } else {
+                statusEl.innerHTML = '<span class="status-dot"></span> no change';
+            }
+
+            renderKpis(data);
+            renderCharts(data);
+            renderAnomalies(data);
+            renderRecommendations(data);
+            renderTokenFlow(data);
+            renderSessions(data);
+        }
+
+        // ---- Main data loader ----
+        async function loadData() {
+            const url = './data.json?_=' + Date.now();
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                window.DATA = data;
+                hasDataFile = true;
+
+                const newHash = hashData(data);
+                const changed = newHash !== previousHash;
+                previousHash = newHash;
+
+                document.getElementById('error-msg').style.display = 'none';
+                updateDashboard(data, changed);
+            } catch (err) {
+                window.DATA = {};
+                hasDataFile = false;
+                previousHash = null;
+                document.getElementById('error-msg').style.display = 'inline';
+                updateDashboard(null, false);
+            }
+        }
+
+        // ---- Initialize ----
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Chart === 'undefined') {
+                document.body.innerHTML = '<div style="padding:40px;color:#c9d1d9;text-align:center">Chart.js failed to load. Please check your network connection.</div>';
+                return;
+            }
+            updateDashboard(null, false);
+            loadData();
+            setInterval(loadData, POLL_INTERVAL);
+        });
+    </script>
 </body>
 </html>
