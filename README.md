@@ -65,3 +65,14 @@ Pull requests welcome. The dashboard is a single HTML file — edit and test in-
 ## License
 
 No license has been applied yet. If you want to use this code, open an issue and ask.
+
+## Architecture
+
+```
+index.html          →  Loads data.json via fetch()
+data.json           →  Your real session data (replace with extract_data.py output)
+scripts/
+  extract_data.py   →  Pulls from Goose SQLite → JSON
+```
+
+This keeps your real data out of the HTML source and makes updates easier.

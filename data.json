@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "source": "Goose SQLite sessions.db",
+    "extracted_at": "",
+    "goose_version": "",
+    "note": "Paste your extract_data.py output here"
+  },
+  "sessions": [],
+  "usage_ledger": [],
+  "summary": {
+    "total_sessions": 0,
+    "total_tokens": 0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "models_used": 0,
+    "date_range": "Run extract_data.py and paste here"
+  }
+}
