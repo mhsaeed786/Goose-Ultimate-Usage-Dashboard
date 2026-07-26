@@ -9,51 +9,56 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
 .container{max-width:1400px;margin:0 auto;padding:24px}
-header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+header{display:flex;align-items:center;gap:16px;margin-bottom:4px;flex-wrap:wrap}
 header h1{font-size:28px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{color:#8b949e;font-size:13px;margin-bottom:24px}
-.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
-.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;text-align:center}
-.kpi-card .value{font-size:22px;font-weight:700;color:#58a6ff;margin-bottom:4px}
-.kpi-card .label{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px}
-.row{display:grid;gap:16px;margin-bottom:24px}
+.live-pill{display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #30363d;padding:4px 12px;border-radius:20px;font-size:11px;color:#8b949e;margin-left:auto}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#3fb950;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.subtitle{color:#8b949e;font-size:12px;margin-bottom:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;text-align:center;position:relative;overflow:hidden}
+.kpi-card .trend{font-size:11px;font-weight:600;margin-bottom:2px}
+.kpi-card .trend.up{color:#3fb950}
+.kpi-card .trend.down{color:#f85149}
+.kpi-card .trend.neutral{color:#8b949e}
+.kpi-card .value{font-size:20px;font-weight:700;color:#58a6ff;margin-bottom:2px;font-family:"SF Mono",Monaco,monospace}
+.kpi-card .label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.5px}
+.row{display:grid;gap:14px;margin-bottom:20px}
 .row-3{grid-template-columns:repeat(3,1fr)}
 .row-2{grid-template-columns:repeat(2,1fr)}
-.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
-.panel h3{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.panel h3 .icon{font-size:16px}
-.chart-container{height:280px;position:relative}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#21262d;color:#8b949e;font-weight:600;text-align:left;padding:10px 12px;position:sticky;top:0;z-index:1}
-td{padding:10px 12px;border-bottom:1px solid #21262d}
+.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px}
+.panel h3{font-size:13px;font-weight:600;color:#e6edf3;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.panel h3 .icon{font-size:15px}
+.chart-container{height:250px;position:relative}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#21262d;color:#8b949e;font-weight:600;text-align:left;padding:8px 10px;position:sticky;top:0;z-index:1}
+td{padding:8px 10px;border-bottom:1px solid #21262d;font-family:"SF Mono",Monaco,monospace}
 tr:hover{background:#0f1317}
-.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
-.scroll-table{max-height:400px;overflow-y:auto;border:1px solid #30363d;border-radius:8px}
-.anomaly-item{padding:12px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:8px;background:#0f1317}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:600}
+.scroll-table{max-height:340px;overflow-y:auto;border:1px solid #30363d;border-radius:8px}
+.anomaly-item{padding:10px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:6px;background:#0f1317;font-size:12px}
 .anomaly-item.warning{border-color:#f0883e}
 .anomaly-item.info{border-color:#3fb950}
 .anomaly-item.danger{border-color:#f85149}
-.recommendation-item{padding:12px;background:#0f1317;border-radius:4px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
-.recommendation-item .icon{font-size:18px}
-.flow-box{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
-.flow-arrow{color:#8b949e;font-size:18px}
+.recommendation-item{padding:10px;background:#0f1317;border-radius:4px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;font-size:12px}
+.recommendation-item .icon{font-size:16px}
+.flow-box{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid;border-radius:6px;font-size:11px;font-weight:600}
+.flow-arrow{color:#8b949e;font-size:16px}
+#last-updated{color:#484f58;font-size:10px;text-align:right;margin-bottom:6px}
+@media(max-width:900px){.row-3,.row-2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="container">
 <header>
 <span style="font-size:32px">🦆</span>
-<h1>Goose Ultimate Usage Dashboard</h1>
+<h1>Goose Usage Dashboard</h1>
+<div class="live-pill"><span class="live-dot"></span><span id="live-text">Live — polling every 5s</span></div>
 </header>
-<p class="subtitle">Replace the placeholder data below with your own extracted from Goose SQLite sessions.db</p>
+<div id="last-updated">Waiting for data...</div>
 
-<div class="kpi-row">
-<div class="kpi-card"><div class="value" id="kpi-sessions">--</div><div class="label">Sessions</div></div>
-<div class="kpi-card"><div class="value" id="kpi-total">--</div><div class="label">Total Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-input">--</div><div class="label">Input Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-output">--</div><div class="label">Output Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-models">--</div><div class="label">Models Used</div></div>
-<div class="kpi-card"><div class="value" id="kpi-range">--</div><div class="label">Date Range</div></div>
+<div class="kpi-grid" id="kpi-grid">
+<!-- Injected by JS -->
 </div>
 
 <div class="row row-3">
@@ -72,117 +77,282 @@ tr:hover{background:#0f1317}
 <div class="panel"><h3><span class="icon">📈</span>Context Growth</h3><div class="chart-container"><canvas id="c-context"></canvas></div></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px">
+<div class="panel" style="margin-bottom:16px">
 <h3><span class="icon">⚠️</span>Anomaly Detection</h3>
-<div class="anomaly-item warning">🚨 <strong>Context bloat detected</strong> — One session grew 9x from ~8K to ~70K tokens. Consider compaction or new sessions.</div>
-<div class="anomaly-item info">ℹ️ <strong>High input ratio</strong> — Input tokens vastly exceed output tokens, typical of agentic tool-output workflows.</div>
-<div class="anomaly-item danger">🔴 <strong>Empty sessions found</strong> — Some sessions recorded zero tokens (possible model errors or abandoned chats).</div>
+<div id="anomaly-list"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px">
+<div class="panel" style="margin-bottom:16px">
 <h3><span class="icon">💡</span>Recommendations</h3>
-<div class="recommendation-item"><span class="icon">💡</span><div><strong>Model switching</strong> — For small chat tasks, consider using a smaller model to reduce token costs.</div></div>
-<div class="recommendation-item"><span class="icon">⚠️</span><div><strong>Close idle sessions</strong> — Empty or idle sessions waste context window space. Clean up regularly.</div></div>
-<div class="recommendation-item"><span class="icon">🔄</span><div><strong>Compaction timing</strong> — Sessions growing past ~50K tokens should trigger compaction or restart.</div></div>
+<div id="recommendation-list"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px">
+<div class="panel" style="margin-bottom:16px">
 <h3><span class="icon">🔀</span>Token Flow</h3>
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
-<div class="flow-box" style="border-color:#58a6ff;color:#58a6ff">Provider A</div>
-<span class="flow-arrow">→</span>
-<div class="flow-box" style="border-color:#f0883e;color:#f0883e">Model X</div>
-<span class="flow-arrow">→</span>
-<div class="flow-box" style="border-color:#3fb950;color:#3fb950">Total Tokens</div>
-</div>
+<div id="flow-viz" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px"><p style="color:#8b949e;font-size:12px">Loading...</p></div>
 </div>
 
 <div class="panel">
 <h3><span class="icon">📋</span>Session Details</h3>
-<p style="color:#8b949e;font-size:12px;margin-bottom:12px">Replace this table with your own session data from extract_data.py</p>
+<div id="last-updated-table" style="color:#484f58;font-size:10px;margin-bottom:6px"></div>
 <div class="scroll-table">
 <table>
-<thead><tr><th>Session ID</th><th>Name</th><th>Model</th><th>Provider</th><th>Created</th><th>Total</th><th>Input</th><th>Output</th></tr></thead>
-<tbody id="session-tbody"><tr><td colspan="8" style="text-align:center;color:#8b949e;padding:24px">Run scripts/extract_data.py and paste your data into the SESSIONS array</td></tr></tbody>
+<thead><tr><th>Session</th><th>Name</th><th>Model</th><th>Provider</th><th>Created</th><th>Total</th><th>Input</th><th>Output</th><th>Duration</th></tr></thead>
+<tbody id="session-tbody"><tr><td colspan="9" style="text-align:center;color:#8b949e;padding:20px">Loading data.json...</td></tr></tbody>
 </table>
 </div>
 </div>
 
-<p style="color:#484f58;font-size:11px;margin-top:24px;text-align:center">Goose Ultimate Usage Dashboard · Replace placeholder data with your own sessions.db extract · MIT License</p>
+<p style="color:#484f58;font-size:10px;margin-top:16px;text-align:center">Goose Ultimate Usage Dashboard · Auto-sync every 5s · data.json</p>
 </div>
 
 <script>
-// ===========================================
-// PLACEHOLDER DATA — Replace with your own
-// Run: python scripts/extract_data.py
-// Paste output into these arrays
-// ===========================================
-const SESSIONS = [];
-const LEDGER = [];
+let charts = {};
+let lastDataHash = '';
 
-// If no real data loaded, show a friendly placeholder chart
-function showPlaceholder(ctx, label) {
-  return new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Demo A', 'Demo B', 'Demo C'],
-      datasets: [{
-        label: label + ' (placeholder)',
-        data: [30, 50, 20],
-        backgroundColor: ['#58a6ff','#f0883e','#3fb950']
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: 'Replace with your data from sessions.db', color: '#8b949e', font: { size: 11 } }
-      },
-      scales: {
-        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
-        y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
-      }
-    }
-  });
+function fmt(n){return n==null?'—':Number(n).toLocaleString()}
+function fmtPct(a,b){return b?((a/b)*100).toFixed(1)+'%':'0%'}
+function fmtDur(ms){
+  if(!ms||ms<=0)return '—';
+  let s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  if(h)return h+'h '+(m%60)+'m';
+  if(m)return m+'m '+(s%60)+'s';
+  return s+'s';
 }
 
-const charts = {};
-charts.last5h = showPlaceholder(document.getElementById('c-last5h').getContext('2d'), 'Last 5 Hours');
-charts.weekly = showPlaceholder(document.getElementById('c-weekly').getContext('2d'), 'Weekly');
-charts.monthly = showPlaceholder(document.getElementById('c-monthly').getContext('2d'), 'Monthly');
-charts.doughnut = new Chart(document.getElementById('c-doughnut').getContext('2d'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Model A', 'Model B', 'Model C'],
-    datasets: [{ data: [60, 30, 10], backgroundColor: ['#58a6ff','#f0883e','#3fb950'], borderWidth: 0 }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { title: { display: true, text: 'Replace with your model data', color: '#8b949e', font: { size: 11 } } } }
-});
-charts.horizontal = showPlaceholder(document.getElementById('c-horizontal').getContext('2d'), 'Per Session');
-charts.inout = showPlaceholder(document.getElementById('c-inout').getContext('2d'), 'In vs Out');
-charts.context = new Chart(document.getElementById('c-context').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: ['1','2','3','4','5'],
-    datasets: [{
-      label: 'Context (placeholder)',
-      data: [1000, 3000, 7000, 15000, 30000],
-      borderColor: '#58a6ff',
-      backgroundColor: 'rgba(88,166,255,0.1)',
-      fill: true,
-      tension: 0.4
-    }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Replace with your context data', color: '#8b949e', font: { size: 11 } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }, y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } } } }
-});
+async function loadData(){
+  try{
+    const res = await fetch('./data.json?_='+Date.now());
+    if(!res.ok) throw new Error(res.status+' '+res.statusText);
+    const d = await res.json();
+    // simple hash to detect changes
+    const hash = JSON.stringify(d).length + (d.summary?.total_tokens||0);
+    const changed = hash !== lastDataHash;
+    lastDataHash = hash;
+    return {data:d,changed};
+  }catch(e){
+    return {error:e.message};
+  }
+}
 
-// KPI placeholders
-document.getElementById('kpi-sessions').textContent = '?';
-document.getElementById('kpi-total').textContent = '?';
-document.getElementById('kpi-input').textContent = '?';
-document.getElementById('kpi-output').textContent = '?';
-document.getElementById('kpi-models').textContent = '?';
-document.getElementById('kpi-range').textContent = 'Run extract_data.py';
+function destroyCharts(){
+  Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy();});
+  charts={};
+}
+
+function buildKPIs(data,prevSummary){
+  const s=data.summary||{};
+  const now={sessions:s.total_sessions||0,total:s.total_tokens||0,input:s.total_input_tokens||0,output:s.total_output_tokens||0,models:s.models_used||0};
+  const prev=prevSummary||{};
+  function trend(key,label,reverse=false){
+    const curr=now[key],old=prev[key];
+    if(old==null||curr===old) return '<div class="trend neutral">— '+label+'</div>';
+    const up=(curr>old)^(reverse);
+    const cls=up?'up':'down',sym=up?'▲':'▼',pct=old?((Math.abs(curr-old)/old)*100).toFixed(1):'∞';
+    return '<div class="trend '+cls+'">'+sym+' '+pct+'% '+label+'</div>';
+  }
+
+  // Extra metrics
+  const sessions=data.sessions||[];
+  const ledger=data.usage_ledger||[];
+  const avgPerSession = now.sessions ? Math.round(now.total/now.sessions) : 0;
+  const avgPerRequest = ledger.length ? Math.round(now.total/ledger.length) : 0;
+  const cacheRead = sessions.reduce((a,s)=>a+(s.cache_read_tokens||0),0);
+  const cacheWrite = sessions.reduce((a,s)=>a+(s.cache_write_tokens||0),0);
+  const cacheRate = now.total ? ((cacheRead+cacheWrite)/now.total*100).toFixed(1) : '0.0';
+  const maxCtx = sessions.length ? Math.max(...sessions.map(s=>s.input_tokens||0)) : 0;
+  const maxCtxSession = sessions.find(s=>(s.input_tokens||0)===maxCtx);
+  const totalDur = sessions.reduce((a,s)=>a+((s.duration_ms||0)),0);
+  const costEst = (now.total/1000000*2.0).toFixed(2); // rough $2 per 1M tok placeholder
+
+  const cards=[
+    {t:trend('sessions','vs last'),v:fmt(now.sessions),l:'Sessions'},
+    {t:trend('total','vs last'),v:fmt(now.total),l:'Total Tokens'},
+    {t:trend('input','vs last'),v:fmt(now.input),l:'Input Tokens'},
+    {t:trend('output','vs last'),v:fmt(now.output),l:'Output Tokens'},
+    {t:'<div class="trend neutral">Ratio '+(now.output?(now.input/now.output).toFixed(1):'∞')+':1</div>',v:fmt(now.models),l:'Models'},
+    {t:'<div class="trend neutral">$'+costEst+' est</div>',v:fmt(avgPerSession),l:'Avg / Session'},
+    {t:'<div class="trend neutral">'+fmt(avgPerRequest)+' avg</div>',v:fmt(ledger.length),l:'Requests'},
+    {t:'<div class="trend neutral">'+cacheRate+'% cache</div>',v:fmt(cacheRead+cacheWrite),l:'Cache Tokens'},
+    {t:'<div class="trend neutral">'+(maxCtxSession?maxCtxSession.name?.slice(0,12)||'Max':'—')+'</div>',v:fmt(maxCtx),l:'Peak Context'},
+    {t:'<div class="trend neutral">'+fmtDur(totalDur)+' total</div>',v:fmtDur(totalDur/now.sessions),l:'Avg Duration'}
+  ];
+
+  document.getElementById('kpi-grid').innerHTML=cards.map(c=>
+    '<div class="kpi-card">'+c.t+'<div class="value">'+c.v+'</div><div class="label">'+c.l+'</div></div>'
+  ).join('');
+}
+
+function buildCharts(data){
+  destroyCharts();
+  const sessions=data.sessions||[];
+  const ledger=data.usage_ledger||[];
+
+  // Color palette per model
+  const modelColors={};
+  const palette=['#58a6ff','#f0883e','#3fb950','#bc8cff','#f85149','#d29922','#79c0ff','#ff7b72'];
+  let ci=0;
+  sessions.forEach(s=>{if(!modelColors[s.model])modelColors[s.model]=palette[ci++%palette.length];});
+
+  // 1. Last 5 Hours — bucket by hour from ledger timestamps
+  const nowTs=Date.now();
+  const fiveH=nowTs-5*3600*1000;
+  const recent=ledger.filter(l=>new Date(l.created_timestamp||l.created_at||0).getTime()>fiveH);
+  const buckets={};
+  recent.forEach(l=>{
+    const d=new Date(l.created_timestamp||l.created_at||0);
+    const key=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    buckets[key]=(buckets[key]||0)+(l.total_tokens||0);
+  });
+  const l5hLabels=Object.keys(buckets).sort();
+  const l5hData=l5hLabels.map(k=>buckets[k]);
+  charts.last5h=new Chart(document.getElementById('c-last5h').getContext('2d'),{
+    type:'bar',
+    data:{labels:l5hLabels.length?l5hLabels:['No recent data'],datasets:[{label:'Tokens',data:l5hLabels.length?l5hData:[0],backgroundColor:'#58a6ff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 2. Weekly — group by day
+  const dayMap={};
+  sessions.forEach(s=>{
+    const d=new Date(s.created_at||0);
+    const key=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    dayMap[key]=(dayMap[key]||0)+(s.total_tokens||0);
+  });
+  charts.weekly=new Chart(document.getElementById('c-weekly').getContext('2d'),{
+    type:'bar',
+    data:{labels:Object.keys(dayMap),datasets:[{label:'Tokens',data:Object.values(dayMap),backgroundColor:'#f0883e'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 3. Monthly — aggregate by month
+  const monthMap={};
+  sessions.forEach(s=>{
+    const d=new Date(s.created_at||0);
+    const key=d.toLocaleDateString('en-US',{year:'numeric',month:'short'});
+    monthMap[key]=(monthMap[key]||0)+(s.total_tokens||0);
+  });
+  charts.monthly=new Chart(document.getElementById('c-monthly').getContext('2d'),{
+    type:'bar',
+    data:{labels:Object.keys(monthMap),datasets:[{label:'Tokens',data:Object.values(monthMap),backgroundColor:'#3fb950'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 4. Doughnut by model
+  const modelTotals={};
+  sessions.forEach(s=>{modelTotals[s.model]=(modelTotals[s.model]||0)+(s.total_tokens||0);});
+  charts.doughnut=new Chart(document.getElementById('c-doughnut').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:Object.keys(modelTotals),datasets:[{data:Object.values(modelTotals),backgroundColor:Object.keys(modelTotals).map(m=>modelColors[m]||'#58a6ff'),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%'}
+  });
+
+  // 5. Horizontal per session
+  const sorted=sessions.slice().sort((a,b)=>(b.total_tokens||0)-(a.total_tokens||0));
+  charts.horizontal=new Chart(document.getElementById('c-horizontal').getContext('2d'),{
+    type:'bar',
+    data:{labels:sorted.map(s=>s.name?.slice(0,20)||s.id),datasets:[{label:'Tokens',data:sorted.map(s=>s.total_tokens||0),backgroundColor:sorted.map(s=>modelColors[s.model]||'#58a6ff')}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 6. Input vs Output
+  charts.inout=new Chart(document.getElementById('c-inout').getContext('2d'),{
+    type:'bar',
+    data:{labels:sorted.slice(0,6).map(s=>s.name?.slice(0,16)||s.id),datasets:[
+      {label:'Input',data:sorted.slice(0,6).map(s=>s.input_tokens||0),backgroundColor:'#58a6ff'},
+      {label:'Output',data:sorted.slice(0,6).map(s=>s.output_tokens||0),backgroundColor:'#3fb950'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 7. Context growth — find session with most ledger entries and plot input over turns
+  const bySession={};
+  ledger.forEach(l=>{bySession[l.session_id]=(bySession[l.session_id]||[]);bySession[l.session_id].push(l);});
+  let maxLen=0,maxId=null;
+  Object.entries(bySession).forEach(([id,arr])=>{if(arr.length>maxLen){maxLen=arr.length;maxId=id;}});
+  const ctxData=maxId?bySession[maxId].map((l,i)=>l.input_tokens||0).slice(0,25):[];
+  charts.context=new Chart(document.getElementById('c-context').getContext('2d'),{
+    type:'line',
+    data:{labels:ctxData.length?ctxData.map((_,i)=>'T'+(i+1)):['No data'],datasets:[{
+      label:'Context',data:ctxData.length?ctxData:[0],
+      borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,0.1)',fill:true,tension:0.4,pointRadius:2
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+  });
+
+  // 8. Anomalies
+  const anomalies=[];
+  const maxCtxS=sessions.reduce((m,s)=>(s.input_tokens||0)>m?s.input_tokens||0:m,0);
+  if(maxCtxS>50000) anomalies.push({c:'warning',t:'🚨 <strong>Context bloat</strong> — peak context '+fmt(maxCtxS)+' tokens. Consider compaction.'});
+  const empties=sessions.filter(s=>!(s.total_tokens||0));
+  if(empties.length) anomalies.push({c:'danger',t:'🔴 <strong>Empty sessions</strong> — '+empties.length+' session(s) with zero tokens (possible failures).'});
+  const ratio=now.output?now.input/now.output:0;
+  if(ratio>50) anomalies.push({c:'info',t:'ℹ️ <strong>High input ratio</strong> — '+ratio.toFixed(1)+':1. Typical for agentic tool-output workflows.'});
+  const cacheTot=sessions.reduce((a,s)=>a+(s.cache_read_tokens||0)+(s.cache_write_tokens||0),0);
+  if(!cacheTot) anomalies.push({c:'info',t:'ℹ️ <strong>No cache usage</strong> — cache reads/writes are zero. Enable caching if supported.'});
+  document.getElementById('anomaly-list').innerHTML=anomalies.length?anomalies.map(a=>'<div class="anomaly-item '+a.c+'">'+a.t+'</div>').join(''):'<p style="color:#8b949e;font-size:12px">No anomalies detected.</p>';
+
+  // 9. Recommendations
+  const recs=[];
+  if(Object.keys(modelTotals).length===1){
+    const m=Object.keys(modelTotals)[0];
+    recs.push({i:'💡',t:'<strong>Single model dominance</strong> — '+m+' handles 100% of tokens. Test smaller models for simple tasks.'});
+  }
+  if(empties.length) recs.push({i:'⚠️',t:'<strong>Clean up empty sessions</strong> — '+empties.length+' idle session(s) waste context window space.'});
+  if(maxCtxS>50000) recs.push({i:'🔄',t:'<strong>Session splitting</strong> — restart after ~50K context to reduce cost and latency.'});
+  if(!cacheTot) recs.push({i:'💾',t:'<strong>Enable caching</strong> — no cache tokens detected. Caching can reduce costs 20-40%.'});
+  recs.push({i:'📊',t:'<strong>Export regularly</strong> — run extract_data.py in a cron/scheduled task to keep this dashboard current.'});
+  document.getElementById('recommendation-list').innerHTML=recs.map(r=>'<div class="recommendation-item"><span class="icon">'+r.i+'</span><div>'+r.t+'</div></div>').join('');
+
+  // 10. Flow
+  const providerMap={};
+  sessions.forEach(s=>{providerMap[s.provider_name||s.provider||'Unknown']=(providerMap[s.provider_name||s.provider||'Unknown']||0)+(s.total_tokens||0);});
+  let flowHtml='';
+  Object.entries(providerMap).forEach(([prov,tok],i)=>{
+    const color=palette[i%palette.length];
+    flowHtml+='<div class="flow-box" style="border-color:'+color+';color:'+color+'">'+prov+'<br><small>'+fmt(tok)+'</small></div>';
+    if(i<Object.keys(providerMap).length-1) flowHtml+='<span class="flow-arrow">→</span>';
+  });
+  document.getElementById('flow-viz').innerHTML=flowHtml||'<p style="color:#8b949e;font-size:12px">No provider data.</p>';
+
+  // 11. Table
+  const tbody=sessions.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  document.getElementById('session-tbody').innerHTML=tbody.map(s=>{
+    const mc=modelColors[s.model]||'#58a6ff';
+    return '<tr>'+
+      '<td>'+(s.id||'—').slice(0,14)+'</td>'+
+      '<td>'+(s.name||'—').slice(0,22)+'</td>'+
+      '<td><span class="badge" style="background:'+mc+'22;color:'+mc+'">'+(s.model||'—')+'</span></td>'+
+      '<td>'+(s.provider_name||s.provider||'—')+'</td>'+
+      '<td>'+(s.created_at?new Date(s.created_at).toLocaleDateString():'—')+'</td>'+
+      '<td style="text-align:right">'+fmt(s.total_tokens)+'</td>'+
+      '<td style="text-align:right">'+fmt(s.input_tokens)+'</td>'+
+      '<td style="text-align:right">'+fmt(s.output_tokens)+'</td>'+
+      '<td>'+fmtDur(s.duration_ms||0)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+let previousSummary=null;
+
+async function render(){
+  const r=await loadData();
+  if(r.error){
+    document.getElementById('last-updated').textContent='Error loading data.json: '+r.error;
+    return;
+  }
+  const d=r.data;
+  buildKPIs(d,previousSummary);
+  buildCharts(d);
+  previousSummary=d.summary;
+  const ts=new Date().toLocaleTimeString();
+  document.getElementById('last-updated').textContent='Updated '+ts+(r.changed?' ● new data':' ● no change');
+  document.getElementById('last-updated-table').textContent='Updated '+ts;
+}
+
+// Initial render + 5s polling
+render();
+setInterval(render,5000);
 </script>
 </body>
 </html>
