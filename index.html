@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goose Ultimate Usage Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
+.container{max-width:1400px;margin:0 auto;padding:24px}
+header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+header h1{font-size:28px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:#8b949e;font-size:13px;margin-bottom:24px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
+.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;text-align:center}
+.kpi-card .value{font-size:22px;font-weight:700;color:#58a6ff;margin-bottom:4px}
+.kpi-card .label{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px}
+.row{display:grid;gap:16px;margin-bottom:24px}
+.row-3{grid-template-columns:repeat(3,1fr)}
+.row-2{grid-template-columns:repeat(2,1fr)}
+.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.panel h3{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.panel h3 .icon{font-size:16px}
+.chart-container{height:280px;position:relative}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#21262d;color:#8b949e;font-weight:600;text-align:left;padding:10px 12px;position:sticky;top:0;z-index:1}
+td{padding:10px 12px;border-bottom:1px solid #21262d}
+tr:hover{background:#0f1317}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.scroll-table{max-height:400px;overflow-y:auto;border:1px solid #30363d;border-radius:8px}
+.anomaly-item{padding:12px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:8px;background:#0f1317}
+.anomaly-item.warning{border-color:#f0883e}
+.anomaly-item.info{border-color:#3fb950}
+.anomaly-item.danger{border-color:#f85149}
+.recommendation-item{padding:12px;background:#0f1317;border-radius:4px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
+.recommendation-item .icon{font-size:18px}
+.flow-box{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.flow-arrow{color:#8b949e;font-size:18px}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<span style="font-size:32px">🦆</span>
+<h1>Goose Ultimate Usage Dashboard</h1>
+</header>
+<p class="subtitle">Replace the placeholder data below with your own extracted from Goose SQLite sessions.db</p>
+
+<div class="kpi-row">
+<div class="kpi-card"><div class="value" id="kpi-sessions">--</div><div class="label">Sessions</div></div>
+<div class="kpi-card"><div class="value" id="kpi-total">--</div><div class="label">Total Tokens</div></div>
+<div class="kpi-card"><div class="value" id="kpi-input">--</div><div class="label">Input Tokens</div></div>
+<div class="kpi-card"><div class="value" id="kpi-output">--</div><div class="label">Output Tokens</div></div>
+<div class="kpi-card"><div class="value" id="kpi-models">--</div><div class="label">Models Used</div></div>
+<div class="kpi-card"><div class="value" id="kpi-range">--</div><div class="label">Date Range</div></div>
+</div>
+
+<div class="row row-3">
+<div class="panel"><h3><span class="icon">⚡</span>Last 5 Hours</h3><div class="chart-container"><canvas id="c-last5h"></canvas></div></div>
+<div class="panel"><h3><span class="icon">📅</span>Weekly Usage</h3><div class="chart-container"><canvas id="c-weekly"></canvas></div></div>
+<div class="panel"><h3><span class="icon">📊</span>Monthly Trend</h3><div class="chart-container"><canvas id="c-monthly"></canvas></div></div>
+</div>
+
+<div class="row row-2">
+<div class="panel"><h3><span class="icon">🍩</span>Token by Model</h3><div class="chart-container"><canvas id="c-doughnut"></canvas></div></div>
+<div class="panel"><h3><span class="icon">📊</span>Tokens per Session</h3><div class="chart-container"><canvas id="c-horizontal"></canvas></div></div>
+</div>
+
+<div class="row row-2">
+<div class="panel"><h3><span class="icon">📊</span>Input vs Output</h3><div class="chart-container"><canvas id="c-inout"></canvas></div></div>
+<div class="panel"><h3><span class="icon">📈</span>Context Growth</h3><div class="chart-container"><canvas id="c-context"></canvas></div></div>
+</div>
+
+<div class="panel" style="margin-bottom:24px">
+<h3><span class="icon">⚠️</span>Anomaly Detection</h3>
+<div class="anomaly-item warning">🚨 <strong>Context bloat detected</strong> — One session grew 9x from ~8K to ~70K tokens. Consider compaction or new sessions.</div>
+<div class="anomaly-item info">ℹ️ <strong>High input ratio</strong> — Input tokens vastly exceed output tokens, typical of agentic tool-output workflows.</div>
+<div class="anomaly-item danger">🔴 <strong>Empty sessions found</strong> — Some sessions recorded zero tokens (possible model errors or abandoned chats).</div>
+</div>
+
+<div class="panel" style="margin-bottom:24px">
+<h3><span class="icon">💡</span>Recommendations</h3>
+<div class="recommendation-item"><span class="icon">💡</span><div><strong>Model switching</strong> — For small chat tasks, consider using a smaller model to reduce token costs.</div></div>
+<div class="recommendation-item"><span class="icon">⚠️</span><div><strong>Close idle sessions</strong> — Empty or idle sessions waste context window space. Clean up regularly.</div></div>
+<div class="recommendation-item"><span class="icon">🔄</span><div><strong>Compaction timing</strong> — Sessions growing past ~50K tokens should trigger compaction or restart.</div></div>
+</div>
+
+<div class="panel" style="margin-bottom:24px">
+<h3><span class="icon">🔀</span>Token Flow</h3>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
+<div class="flow-box" style="border-color:#58a6ff;color:#58a6ff">Provider A</div>
+<span class="flow-arrow">→</span>
+<div class="flow-box" style="border-color:#f0883e;color:#f0883e">Model X</div>
+<span class="flow-arrow">→</span>
+<div class="flow-box" style="border-color:#3fb950;color:#3fb950">Total Tokens</div>
+</div>
+</div>
+
+<div class="panel">
+<h3><span class="icon">📋</span>Session Details</h3>
+<p style="color:#8b949e;font-size:12px;margin-bottom:12px">Replace this table with your own session data from extract_data.py</p>
+<div class="scroll-table">
+<table>
+<thead><tr><th>Session ID</th><th>Name</th><th>Model</th><th>Provider</th><th>Created</th><th>Total</th><th>Input</th><th>Output</th></tr></thead>
+<tbody id="session-tbody"><tr><td colspan="8" style="text-align:center;color:#8b949e;padding:24px">Run scripts/extract_data.py and paste your data into the SESSIONS array</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<p style="color:#484f58;font-size:11px;margin-top:24px;text-align:center">Goose Ultimate Usage Dashboard · Replace placeholder data with your own sessions.db extract · MIT License</p>
+</div>
+
+<script>
+// ===========================================
+// PLACEHOLDER DATA — Replace with your own
+// Run: python scripts/extract_data.py
+// Paste output into these arrays
+// ===========================================
+const SESSIONS = [];
+const LEDGER = [];
+
+// If no real data loaded, show a friendly placeholder chart
+function showPlaceholder(ctx, label) {
+  return new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Demo A', 'Demo B', 'Demo C'],
+      datasets: [{
+        label: label + ' (placeholder)',
+        data: [30, 50, 20],
+        backgroundColor: ['#58a6ff','#f0883e','#3fb950']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'Replace with your data from sessions.db', color: '#8b949e', font: { size: 11 } }
+      },
+      scales: {
+        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+      }
+    }
+  });
+}
+
+const charts = {};
+charts.last5h = showPlaceholder(document.getElementById('c-last5h').getContext('2d'), 'Last 5 Hours');
+charts.weekly = showPlaceholder(document.getElementById('c-weekly').getContext('2d'), 'Weekly');
+charts.monthly = showPlaceholder(document.getElementById('c-monthly').getContext('2d'), 'Monthly');
+charts.doughnut = new Chart(document.getElementById('c-doughnut').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Model A', 'Model B', 'Model C'],
+    datasets: [{ data: [60, 30, 10], backgroundColor: ['#58a6ff','#f0883e','#3fb950'], borderWidth: 0 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { title: { display: true, text: 'Replace with your model data', color: '#8b949e', font: { size: 11 } } } }
+});
+charts.horizontal = showPlaceholder(document.getElementById('c-horizontal').getContext('2d'), 'Per Session');
+charts.inout = showPlaceholder(document.getElementById('c-inout').getContext('2d'), 'In vs Out');
+charts.context = new Chart(document.getElementById('c-context').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['1','2','3','4','5'],
+    datasets: [{
+      label: 'Context (placeholder)',
+      data: [1000, 3000, 7000, 15000, 30000],
+      borderColor: '#58a6ff',
+      backgroundColor: 'rgba(88,166,255,0.1)',
+      fill: true,
+      tension: 0.4
+    }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Replace with your context data', color: '#8b949e', font: { size: 11 } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }, y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } } } }
+});
+
+// KPI placeholders
+document.getElementById('kpi-sessions').textContent = '?';
+document.getElementById('kpi-total').textContent = '?';
+document.getElementById('kpi-input').textContent = '?';
+document.getElementById('kpi-output').textContent = '?';
+document.getElementById('kpi-models').textContent = '?';
+document.getElementById('kpi-range').textContent = 'Run extract_data.py';
+</script>
+</body>
+</html>
