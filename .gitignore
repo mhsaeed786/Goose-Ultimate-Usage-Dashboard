@@ -1,5 +1,15 @@
+# Local data (users should generate their own)
+data/*.json
+!data/data.json.template
+!data/goose_usage_data.json
+
+# Build artifacts
 *.zip
-*.tar.gz
+
+# OS
 .DS_Store
-node_modules/
-data.json
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

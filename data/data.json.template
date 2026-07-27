@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "source": "Goose SQLite sessions.db",
+    "extracted_at": "",
+    "goose_version": "",
+    "note": "Replace this file with output from scripts/extract_data.py"
+  },
+  "summary": {
+    "total_sessions": 0,
+    "active_sessions": 0,
+    "total_tokens": 0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "total_cache_read_tokens": 0,
+    "total_cache_write_tokens": 0,
+    "models_used": 0,
+    "models": [],
+    "model_breakdown": [],
+    "input_output_ratio": 0,
+    "avg_per_session": 0
+  },
+  "sessions": [],
+  "usage_ledger": []
+}

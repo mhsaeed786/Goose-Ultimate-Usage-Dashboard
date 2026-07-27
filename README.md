@@ -1,78 +1,62 @@
 # Goose Ultimate Usage Dashboard
 
-A standalone HTML dashboard for visualizing Goose AI assistant token usage from the SQLite session database.
+A real-time usage dashboard for [Goose](https://github.com/block/goose) sessions.
 
-## ⚠️ Status
+## Status
 
-This is a **prototype**. It has been tested on:
-- ✅ Windows 10 + Edge (primary dev environment)
-- ❓ macOS — not yet tested
-- ❓ Linux — not yet tested
-- ❓ Safari — not yet tested
+**Working prototype.** Tested on Windows 10 with Goose Desktop v1.43.0.
 
-Chart.js is loaded from CDN, so it *should* work cross-platform, but this is not verified.
+> This is an early version. Some features (like true 5-second live sync inside the Goose app sandbox) are still being worked out. The dashboard renders correctly with embedded data and will fall back to embedded data if live sync is unavailable.
 
-## Features
+## What it does
 
-- **Live KPI Strip**: Sessions, total tokens, input/output breakdown, models used, date range
-- **Time-Window Charts**: Last 5 Hours, Weekly, Monthly usage
-- **Model Breakdown**: Token distribution (doughnut) + per-session horizontal bars
-- **Token Flow**: Provider to Model to Total visual flow
-- **Agent-Aware Analytics**: Context window evolution, input vs output ratio
-- **Anomaly Detection**: Context bloat, empty sessions, cache utilization flags
-- **Cost Optimization**: Actionable recommendations based on usage patterns
-- **Session Table**: Full details with color-coded model badges
+- Reads your Goose SQLite sessions.db
+- Displays total/input/output tokens, models used, cache rate, peak context, and more
+- Shows Last 5 Hours, Weekly, Monthly, Model breakdown, per-session, input/output, and context growth charts
+- Detects anomalies (context bloat, empty sessions, high input ratio, no cache)
+- Gives recommendations (split sessions, enable caching, clean empty sessions)
+- Visualizes token flow by provider
+- Lists all sessions in a sortable table
+
+## Folder Structure
+
+- app/ - Final Goose app and Chart.js bundle
+- data/ - Sample data and empty template
+- scripts/ - Python extraction script
+- src/ - Build helpers
+- docs/ - Architecture docs (TBD)
+- manifest.json - Project metadata
+- README.md - This file
 
 ## Quick Start
 
-1. Open `index.html` in a modern Chromium-based browser (Edge, Chrome, Brave)
-2. The file contains **demo placeholder data** — replace it with your own extracted data
-3. To use your own data, run the extraction script and paste the JSON into the `SESSIONS` and `LEDGER` arrays
+### 1. Extract your data
 
-## Data Source
+Windows:
+    python scripts/extract_data.py --db "%APPDATA%\Block\goose\data\sessions\sessions.db" --out data/goose_usage_data.json
 
-Goose stores session data in a SQLite database:
+macOS:
+    python scripts/extract_data.py --db "~/Library/Application Support/Block/goose/data/sessions/sessions.db" --out data/goose_usage_data.json
 
-| Platform | Path |
-|----------|------|
-| Windows  | `%APPDATA%\Block\goose\data\sessions\sessions.db` |
-| macOS    | `~/.local/share/goose/sessions.db` (unverified) |
-| Linux    | `~/.local/share/goose/sessions.db` (unverified) |
+Linux:
+    python scripts/extract_data.py --db "~/.local/share/Block/goose/data/sessions/sessions.db" --out data/goose_usage_data.json
 
-Tables:
-- `sessions` — per-session token totals, provider, model
-- `usage_ledger` — per-turn token counts with timestamps
-- `messages` — individual messages
+### 2. Install in Goose
 
-## Extract Your Own Data
+Copy app/goose-usage-dashboard.html and app/chart.js to your Goose apps directory:
 
-```bash
-python scripts/extract_data.py
-```
+- Windows: %APPDATA%\Block\goose\data\apps\
+- macOS: ~/Library/Application Support/Block/goose/data/apps/
+- Linux: ~/.local/share/Block/goose/data/apps/
 
-Or manually with sqlite3:
+Then open Goose -> Apps -> "Goose Usage Dashboard".
 
-```bash
-sqlite3 "$APPDATA/Block/goose/data/sessions/sessions.db" "SELECT * FROM sessions;"
-```
+## Known Issues
 
-Paste the JSON output into the `SESSIONS` and `LEDGER` arrays in `index.html`.
-
-## Contributing
-
-Pull requests welcome. The dashboard is a single HTML file — edit and test in-browser.
+- Live 5s sync via data.json does not work inside the Goose app sandbox. The dashboard uses embedded data as fallback and renders immediately.
+- macOS / Linux / Safari are not tested.
+- No license has been applied yet.
 
 ## License
 
-No license has been applied yet. If you want to use this code, open an issue and ask.
-
-## Architecture
-
-```
-index.html          →  Loads data.json via fetch()
-data.json           →  Your real session data (replace with extract_data.py output)
-scripts/
-  extract_data.py   →  Pulls from Goose SQLite → JSON
-```
-
-This keeps your real data out of the HTML source and makes updates easier.
+No license has been applied. Open an issue if you want to use it.

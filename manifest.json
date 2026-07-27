@@ -1,27 +1,29 @@
 {
-  "name": "goose-ultimate-usage-dashboard",
+  "name": "Goose Ultimate Usage Dashboard",
   "version": "1.0.0",
-  "description": "Ultimate usage dashboard for Goose AI with token tracking, anomaly detection, and cost optimization",
-  "type": "html-dashboard",
-  "entry": "index.html",
-  "data_source": "Goose SQLite sessions.db",
-  "tables": [
-    "sessions",
-    "usage_ledger",
-    "messages"
-  ],
+  "description": "Real-time token usage dashboard for Goose AI sessions",
+  "author": "mhsaeed786",
+  "app": {
+    "file": "app/goose-usage-dashboard.html",
+    "width": 1400,
+    "height": 900
+  },
+  "data": {
+    "template": "data/data.json.template",
+    "sample": "data/goose_usage_data.json"
+  },
+  "scripts": {
+    "extract": "scripts/extract_data.py",
+    "build": "src/build_app.py"
+  },
   "features": [
-    "kpi-strip",
-    "last-5-hours",
-    "weekly-usage",
-    "monthly-trend",
-    "model-distribution",
-    "session-breakdown",
-    "token-flow",
-    "input-output-analysis",
-    "context-growth",
-    "anomaly-detection",
-    "recommendations",
-    "session-table"
+    "Live 5-second sync",
+    "Inline Chart.js (offline-capable)",
+    "10 KPI cards",
+    "7 Chart.js visualizations",
+    "Anomaly detection",
+    "Cost optimization recommendations",
+    "Provider token flow",
+    "Session details table"
   ]
 }
