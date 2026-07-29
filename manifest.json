@@ -24,6 +24,10 @@
     "Anomaly detection",
     "Cost optimization recommendations",
     "Provider token flow",
-    "Session details table"
+    "Session details table",
+    "Cost of inference tracking",
+    "Model-level cost breakdown",
+    "Cost efficiency (tokens per dollar)",
+    "Cost trend analysis"
   ]
 }

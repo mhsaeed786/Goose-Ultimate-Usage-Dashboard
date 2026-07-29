@@ -12,6 +12,34 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+# Standard LLM pricing per 1K tokens (USD)
+PRICING_TABLE = {
+    "gpt-4o":          {"input": 0.0025, "output": 0.010},
+    "gpt-4-turbo":     {"input": 0.0025, "output": 0.010},
+    "gpt-3.5-turbo":   {"input": 0.0015, "output": 0.002},
+    "claude-3-opus":   {"input": 0.015,  "output": 0.030},
+    "claude-3-sonnet": {"input": 0.008,  "output": 0.015},
+    "claude-3-haiku":  {"input": 0.0005, "output": 0.002},
+    "gemini-pro":      {"input": 0.002,  "output": 0.004},
+    "gemini-pro-vision": {"input": 0.002, "output": 0.006},
+    "default":         {"input": 0.0015, "output": 0.003},
+}
+
+
+def get_pricing(model_name):
+    """Look up pricing for a model, falling back to default."""
+    m = model_name.lower()
+    for key, price in PRICING_TABLE.items():
+        if key in m:
+            return price
+    return PRICING_TABLE["default"]
+
+
+def calc_session_cost(input_tokens, output_tokens, model_name):
+    """Calculate estimated inference cost for a session."""
+    p = get_pricing(model_name)
+    return (p["input"] * input_tokens + p["output"] * output_tokens) / 1000
+
 
 def parse_time_ms(v):
     if not v:
@@ -48,18 +76,23 @@ def extract(db_path, out_path):
         except Exception:
             pass
 
+        input_t = int(row[8] or row[5] or 0)
+        output_t = int(row[9] or row[6] or 0)
+        cost = calc_session_cost(input_t, output_t, model)
+
         sessions.append({
             "id": row[0],
             "name": row[1] or row[0],
             "created_at": row[2],
             "provider_name": row[3] or "unknown",
             "total_tokens": int(row[7] or row[4] or 0),
-            "input_tokens": int(row[8] or row[5] or 0),
-            "output_tokens": int(row[9] or row[6] or 0),
+            "input_tokens": input_t,
+            "output_tokens": output_t,
             "cache_read_tokens": int(row[10] or 0),
             "cache_write_tokens": int(row[11] or 0),
             "duration_ms": 0,
             "model": model,
+            "estimated_cost": round(cost, 6),
         })
 
     ledger = []
@@ -96,6 +129,15 @@ def extract(db_path, out_path):
     cache_w = sum(s["cache_write_tokens"] for s in sessions)
     models = sorted({s["model"] for s in sessions if s["model"] != "unknown"})
 
+    # Cost calculations
+    total_cost = sum(s.get("estimated_cost", 0) for s in sessions)
+    cost_per_1k = (total_cost / total * 1000) if total else 0
+    cost_by_model = {}
+    for s in sessions:
+        m = s["model"]
+        cost_by_model[m] = cost_by_model.get(m, 0) + s.get("estimated_cost", 0)
+    cost_by_model = {m: round(c, 6) for m, c in cost_by_model.items()}
+
     model_totals = {}
     for s in sessions:
         model_totals[s["model"]] = model_totals.get(s["model"], 0) + s["total_tokens"]
@@ -126,6 +168,9 @@ def extract(db_path, out_path):
             "model_breakdown": model_breakdown,
             "input_output_ratio": round(input_t / output_t, 1) if output_t else 0,
             "avg_per_session": round(total / len(active)) if active else 0,
+            "total_cost": round(total_cost, 6),
+            "cost_per_1k_tokens": round(cost_per_1k, 6),
+            "cost_by_model": cost_by_model,
         },
         "sessions": sessions,
         "usage_ledger": ledger,

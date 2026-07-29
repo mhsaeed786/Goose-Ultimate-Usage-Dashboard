@@ -17,7 +17,10 @@
     "models": [],
     "model_breakdown": [],
     "input_output_ratio": 0,
-    "avg_per_session": 0
+    "avg_per_session": 0,
+    "total_cost": 0,
+    "cost_per_1k_tokens": 0,
+    "cost_by_model": {}
   },
   "sessions": [],
   "usage_ledger": []

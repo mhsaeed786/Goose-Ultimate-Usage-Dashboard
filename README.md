@@ -17,6 +17,10 @@ A real-time usage dashboard for [Goose](https://github.com/block/goose) sessions
 - Gives recommendations (split sessions, enable caching, clean empty sessions)
 - Visualizes token flow by provider
 - Lists all sessions in a sortable table
+- **Cost of inference tracking** — calculates estimated inference cost per session and per model
+- **Cost breakdown by model** — see which models are driving your spend
+- **Cost efficiency** — tokens per dollar metric for each session
+- **Cost trend analysis** — track how your inference costs change over time
 
 ## Folder Structure
 

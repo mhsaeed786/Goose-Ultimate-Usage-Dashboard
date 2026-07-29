@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goose Usage Dashboard</title>
+    <script src="chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f1117;
+            color: #e1e4e8;
+            padding: 20px;
+        }
+        .container { max-width: 1500px; margin: 0 auto; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #30363d;
+        }
+        .header h1 { font-size: 26px; background: linear-gradient(135deg, #58a6ff, #bc8cff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .status { font-size: 13px; color: #8b949e; }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .kpi-card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 14px 16px; transition: border-color 0.2s, transform 0.2s;
+        }
+        .kpi-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
+        .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; margin-bottom: 6px; }
+        .kpi-value { font-size: 22px; font-weight: 600; color: #f0f6fc; }
+        .kpi-sub { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .chart-card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px;
+        }
+        .chart-card.full { grid-column: 1 / -1; }
+        .chart-card h3 { font-size: 14px; color: #8b949e; margin-bottom: 12px; }
+        .chart-container { position: relative; height: 280px; width: 100%; }
+        .section-title { font-size: 16px; font-weight: 600; color: #f0f6fc; margin: 24px 0 16px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #30363d; color: #8b949e; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        td { padding: 10px 12px; border-bottom: 1px solid #21262d; }
+        tr:hover td { background: #1c2128; }
+        .model-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #1f2937; color: #58a6ff; }
+        .cost-positive { color: #3fb950; }
+        .cost-negative { color: #f85149; }
+        .cost-neutral { color: #d29922; }
+        .nav-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .nav-tab { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; color: #8b949e; background: transparent; border: 1px solid transparent; transition: all 0.2s; }
+        .nav-tab:hover { color: #f0f6fc; background: #1c2128; }
+        .nav-tab.active { color: #f0f6fc; background: #1f2937; border-color: #30363d; }
+        .hidden { display: none !important; }
+        .cost-bar { height: 4px; border-radius: 2px; background: #21262d; margin-top: 8px; overflow: hidden; }
+        .cost-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Goose Usage Dashboard</h1>
+        <div class="status"><span class="status-dot" style="background:#3fb950"></span>Embedded Data Mode</div>
+    </div>
+
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <div class="nav-tabs" id="navTabs">
+        <div class="nav-tab active" data-view="overview">Overview</div>
+        <div class="nav-tab" data-view="cost">Cost Analysis</div>
+        <div class="nav-tab" data-view="models">Models</div>
+        <div class="nav-tab" data-view="sessions">Sessions</div>
+    </div>
+
+    <div id="viewOverview">
+        <div class="chart-grid">
+            <div class="chart-card"><h3>Last 5 Hours (Token Count)</h3><div class="chart-container"><canvas id="chart1"></canvas></div></div>
+            <div class="chart-card"><h3>Weekly Token Trend</h3><div class="chart-container"><canvas id="chart2"></canvas></div></div>
+            <div class="chart-card"><h3>Monthly Token Usage</h3><div class="chart-container"><canvas id="chart3"></canvas></div></div>
+            <div class="chart-card"><h3>Model Distribution</h3><div class="chart-container"><canvas id="chart4"></canvas></div></div>
+            <div class="chart-card"><h3>Input vs Output Tokens</h3><div class="chart-container"><canvas id="chart5"></canvas></div></div>
+            <div class="chart-card"><h3>Context Growth</h3><div class="chart-container"><canvas id="chart6"></canvas></div></div>
+        </div>
+    </div>
+
+    <div id="viewCost" class="hidden">
+        <div class="chart-grid">
+            <div class="chart-card full"><h3>Cost Breakdown by Model</h3><div class="chart-container"><canvas id="costChart1"></canvas></div></div>
+            <div class="chart-card"><h3>Cost per Session</h3><div class="chart-container"><canvas id="costChart2"></canvas></div></div>
+            <div class="chart-card"><h3>Cost Trend (Last 12 Sessions)</h3><div class="chart-container"><canvas id="costChart3"></canvas></div></div>
+            <div class="chart-card"><h3>Cost Efficiency (Tokens per Dollar)</h3><div class="chart-container"><canvas id="costChart4"></canvas></div></div>
+        </div>
+    </div>
+
+    <div id="viewModels" class="hidden">
+        <div class="chart-grid">
+            <div class="chart-card full"><h3>Model Usage Over Time</h3><div class="chart-container"><canvas id="modelChart1"></canvas></div></div>
+            <div class="chart-card"><h3>Token Allocation by Model</h3><div class="chart-container"><canvas id="modelChart2"></canvas></div></div>
+            <div class="chart-card"><h3>Cost by Model</h3><div class="chart-container"><canvas id="modelChart3"></canvas></div></div>
+        </div>
+    </div>
+
+    <div id="viewSessions" class="hidden">
+        <div class="section-title">Session Details</div>
+        <div class="table-wrap" id="sessionTable"></div>
+    </div>
+</div>
+
+<script>
+// ===== PRICING TABLE =====
+const PRICING = {
+    "gpt-4o":          { input: 0.0025, output: 0.010 },
+    "gpt-4-turbo":     { input: 0.0025, output: 0.010 },
+    "gpt-3.5-turbo":   { input: 0.0015, output: 0.002 },
+    "claude-3-opus":   { input: 0.015,  output: 0.030 },
+    "claude-3-sonnet": { input: 0.008,  output: 0.015 },
+    "claude-3-haiku":  { input: 0.0005, output: 0.002 },
+    "gemini-pro":      { input: 0.002,  output: 0.004 },
+    "gemini-pro-vision": { input: 0.002, output: 0.006 },
+    "default":         { input: 0.0015, output: 0.003 }
+};
+
+function getPricing(model) {
+    const m = model.toLowerCase();
+    for (const k of Object.keys(PRICING)) {
+        if (m.includes(k)) return PRICING[k];
+    }
+    return PRICING.default;
+}
+
+function calcSessionCost(s) {
+    const p = getPricing(s.model);
+    return p.input * s.input_tokens + p.output * s.output_tokens;
+}
+
+function calcTotalCost(data) {
+    let total = 0;
+    (data.sessions || []).forEach(s => total += calcSessionCost(s));
+    (data.usage_ledger || []).forEach(e => {
+        const p = getPricing(e.model);
+        total += p.input * e.input_tokens + p.output * e.output_tokens;
+    });
+    return total;
+}
+
+// ===== SAMPLE DATA =====
+const SAMPLE = {
+    meta: { source: "Goose SQLite sessions.db", extracted_at: "2026-07-29T11:00:00Z", goose_version: "1.43.0" },
+    summary: {
+        total_sessions: 150, active_sessions: 127,
+        total_tokens: 1250000, total_input_tokens: 890000, total_output_tokens: 360000,
+        total_cache_read_tokens: 45000, total_cache_write_tokens: 12000,
+        models_used: 4, models: ["gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "gemini-pro"],
+        model_breakdown: [
+            { model: "gpt-4o", tokens: 650000, percent: 52.0 },
+            { model: "gpt-3.5-turbo", tokens: 320000, percent: 25.6 },
+            { model: "claude-3-sonnet", tokens: 180000, percent: 14.4 },
+            { model: "gemini-pro", tokens: 100000, percent: 8.0 }
+        ],
+        input_output_ratio: 2.47, avg_per_session: 8333
+    },
+    sessions: [],
+    usage_ledger: []
+};
+
+// Generate realistic session data
+const MODELS = ["gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "gemini-pro"];
+const PROVIDERS = ["OpenAI", "OpenAI", "Anthropic", "Google"];
+const NAMES = ["Code Review", "Data Analysis", "Customer Support", "Content Gen", "Debugging", "Research", "Translation", "Summarization", "Planning", "Refactoring"];
+
+for (let i = 0; i < 60; i++) {
+    const mi = i % MODELS.length;
+    const model = MODELS[mi];
+    const inputT = Math.floor(5000 + Math.random() * 20000);
+    const outputT = Math.floor(1000 + Math.random() * 8000);
+    const cacheR = Math.floor(Math.random() * 3000);
+    const cacheW = Math.floor(Math.random() * 500);
+    const ts = new Date(2026, 6, 1 + Math.floor(i / 2), 8 + (i % 12), (i * 17) % 60).toISOString();
+    SAMPLE.sessions.push({
+        id: "s" + (i+1),
+        name: NAMES[i % NAMES.length] + " #" + (i+1),
+        created_at: ts,
+        provider_name: PROVIDERS[mi],
+        model: model,
+        total_tokens: inputT + outputT,
+        input_tokens: inputT,
+        output_tokens: outputT,
+        cache_read_tokens: cacheR,
+        cache_write_tokens: cacheW,
+        duration_ms: Math.floor(2000 + Math.random() * 8000)
+    });
+    SAMPLE.usage_ledger.push({
+        id: i+1, session_id: "s" + (i+1),
+        created_timestamp: new Date(ts).getTime(),
+        model: model,
+        input_tokens: inputT, output_tokens: outputT,
+        total_tokens: inputT + outputT,
+        cache_read_tokens: cacheR, cache_write_tokens: cacheW
+    });
+}
+
+// ===== DASHBOARD =====
+let data = SAMPLE;
+let charts = {};
+
+function fmt(n) {
+    if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return n.toLocaleString();
+    return n.toString();
+}
+function fmt$(n) { return '$' + n.toFixed(2); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+function renderKPIs() {
+    const totalCost = calcTotalCost(data);
+    const totalTokens = data.summary.total_tokens;
+    const costPer1k = totalTokens > 0 ? (totalCost / totalTokens * 1000) : 0;
+    const avgCost = data.summary.active_sessions > 0 ? (totalCost / data.summary.active_sessions) : 0;
+
+    document.getElementById('kpiRow').innerHTML = [
+        { label: 'Total Tokens', value: fmt(totalTokens), sub: fmt(data.summary.total_input_tokens) + ' in / ' + fmt(data.summary.total_output_tokens) + ' out' },
+        { label: 'Total Cost', value: fmt$(totalCost), sub: '$' + costPer1k.toFixed(4) + ' / 1K tokens' },
+        { label: 'Avg Cost / Session', value: fmt$(avgCost), sub: data.summary.active_sessions + ' active sessions' },
+        { label: 'Sessions', value: data.summary.total_sessions, sub: data.summary.active_sessions + ' active' },
+        { label: 'Models Used', value: data.summary.models_used, sub: data.summary.models.join(', ') },
+        { label: 'Input/Output Ratio', value: data.summary.input_output_ratio + ':1', sub: fmt(data.summary.total_input_tokens) + ' / ' + fmt(data.summary.total_output_tokens) },
+        { label: 'Cache Rate', value: fmtPct(data.summary.total_cache_read_tokens / totalTokens * 100), sub: fmt(data.summary.total_cache_read_tokens) + ' read / ' + fmt(data.summary.total_cache_write_tokens) + ' write' },
+        { label: 'Avg Tokens / Session', value: fmt(data.summary.avg_per_session), sub: 'across ' + data.summary.active_sessions + ' sessions' }
+    ].map(c => `<div class="kpi-card"><div class="kpi-label">${c.label}</div><div class="kpi-value">${c.value}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+}
+
+function renderCharts() {
+    const sessions = data.sessions;
+    const labels = sessions.map((s,i) => '#' + (i+1));
+    const tokens = sessions.map(s => s.total_tokens);
+    const inputT = sessions.map(s => s.input_tokens);
+    const outputT = sessions.map(s => s.output_tokens);
+    const costs = sessions.map(s => calcSessionCost(s));
+    const durations = sessions.map(s => s.duration_ms / 1000);
+
+    // Chart 1: Last 5 Hours (last 12 sessions)
+    const last12 = sessions.slice(-12);
+    const l12labels = last12.map(s => s.name.substring(0, 10));
+    const l12tokens = last12.map(s => s.total_tokens);
+    new Chart(document.getElementById('chart1'), {
+        type: 'bar',
+        data: { labels: l12labels, datasets: [{ label: 'Tokens', data: l12tokens, backgroundColor: '#58a6ff' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) } } } }
+    });
+
+    // Chart 2: Weekly (last 28 sessions grouped by week)
+    const weekly = [];
+    for (let i = 0; i < sessions.length; i += 7) {
+        weekly.push(sessions.slice(i, i+7).reduce((a,s) => a + s.total_tokens, 0));
+    }
+    new Chart(document.getElementById('chart2'), {
+        type: 'line',
+        data: { labels: weekly.map((_,i) => 'W' + (i+1)), datasets: [{ label: 'Weekly Tokens', data: weekly, borderColor: '#3fb950', tension: 0.3, fill: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) } } } }
+    });
+
+    // Chart 3: Monthly (grouped by 4-week blocks)
+    const monthly = [];
+    for (let i = 0; i < sessions.length; i += 28) {
+        monthly.push(sessions.slice(i, i+28).reduce((a,s) => a + s.total_tokens, 0));
+    }
+    new Chart(document.getElementById('chart3'), {
+        type: 'bar',
+        data: { labels: monthly.map((_,i) => 'M' + (i+1)), datasets: [{ label: 'Monthly Tokens', data: monthly, backgroundColor: '#bc8cff' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) } } } }
+    });
+
+    // Chart 4: Model Distribution (donut)
+    const modelTotals = {};
+    sessions.forEach(s => { modelTotals[s.model] = (modelTotals[s.model] || 0) + s.total_tokens; });
+    const modelLabels = Object.keys(modelTotals);
+    const modelData = Object.values(modelTotals);
+    const colors = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149'];
+    new Chart(document.getElementById('chart4'), {
+        type: 'doughnut',
+        data: { labels: modelLabels, datasets: [{ data: modelData, backgroundColor: colors.slice(0, modelLabels.length) }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
+
+    // Chart 5: Input vs Output
+    new Chart(document.getElementById('chart5'), {
+        type: 'bar',
+        data: {
+            labels: labels.slice(-20),
+            datasets: [
+                { label: 'Input', data: inputT.slice(-20), backgroundColor: '#58a6ff' },
+                { label: 'Output', data: outputT.slice(-20), backgroundColor: '#3fb950' }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) } } } }
+    });
+
+    // Chart 6: Context Growth
+    let cumulative = 0;
+    const cumData = sessions.map(s => { cumulative += s.total_tokens; return cumulative; });
+    new Chart(document.getElementById('chart6'), {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Cumulative Tokens', data: cumData, borderColor: '#d29922', tension: 0.3, fill: true, backgroundColor: 'rgba(210,153,34,0.1)' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { ticks: { callback: v => fmt(v) } } } }
+    });
+}
+
+function renderCostCharts() {
+    const sessions = data.sessions;
+    const labels = sessions.map((s,i) => '#' + (i+1));
+    const costs = sessions.map(s => calcSessionCost(s));
+
+    // Cost Chart 1: Cost Breakdown by Model (bar)
+    const modelCosts = {};
+    sessions.forEach(s => {
+        modelCosts[s.model] = (modelCosts[s.model] || 0) + calcSessionCost(s);
+    });
+    const mcLabels = Object.keys(modelCosts);
+    const mcData = Object.values(modelCosts);
+    const colors = ['#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#f85149'];
+    new Chart(document.getElementById('costChart1'), {
+        type: 'bar',
+        data: { labels: mcLabels, datasets: [{ label: 'Cost ($)', data: mcData, backgroundColor: colors.slice(0, mcLabels.length) }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(2) } } } }
+    });
+
+    // Cost Chart 2: Cost per Session (bar)
+    new Chart(document.getElementById('costChart2'), {
+        type: 'bar',
+        data: { labels: labels.slice(-20), datasets: [{ label: 'Cost ($)', data: costs.slice(-20), backgroundColor: '#d29922' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(2) } } } }
+    });
+
+    // Cost Chart 3: Cost Trend (line)
+    new Chart(document.getElementById('costChart3'), {
+        type: 'line',
+        data: { labels: labels.slice(-12), datasets: [{ label: 'Cost Trend', data: costs.slice(-12), borderColor: '#f85149', tension: 0.3, fill: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(2) } } } }
+    });
+
+    // Cost Chart 4: Cost Efficiency (tokens per dollar)
+    const efficiency = sessions.map(s => {
+        const c = calcSessionCost(s);
+        return c > 0 ? s.total_tokens / c : 0;
+    });
+    new Chart(document.getElementById('costChart4'), {
+        type: 'bar',
+        data: { labels: labels.slice(-20), datasets: [{ label: 'Tokens/$', data: efficiency.slice(-20), backgroundColor: '#3fb950' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => v.toFixed(0) + ' tok/$' } } } }
+    });
+}
+
+function renderModelCharts() {
+    const sessions = data.sessions;
+    const labels = sessions.map((s,i) => '#' + (i+1));
+
+    // Model Chart 1: Model Usage Over Time (stacked bar)
+    const modelNames = [...new Set(sessions.map(s => s.model))];
+    const datasets = modelNames.map((m, i) => ({
+        label: m,
+        data: sessions.map(s => s.model === m ? s.total_tokens : 0),
+        backgroundColor: ['#58a6ff', '#3fb950', '#bc8cff', '#d29922'][i]
+    }));
+    new Chart(document.getElementById('modelChart1'), {
+        type: 'bar',
+        data: { labels, datasets },
+        options: { responsive: true, maintainAspectRatio: false,
+            scales: { y: { stacked: true, ticks: { callback: v => fmt(v) } }, x: { stacked: true } } }
+    });
+
+    // Model Chart 2: Token Allocation by Model (radar)
+    const modelTotals = {};
+    sessions.forEach(s => { modelTotals[s.model] = (modelTotals[s.model] || 0) + s.total_tokens; });
+    new Chart(document.getElementById('modelChart2'), {
+        type: 'radar',
+        data: {
+            labels: Object.keys(modelTotals),
+            datasets: [{ label: 'Tokens', data: Object.values(modelTotals), backgroundColor: 'rgba(88,166,255,0.2)', borderColor: '#58a6ff' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { r: { ticks: { callback: v => fmt(v) } } } }
+    });
+
+    // Model Chart 3: Cost by Model (horizontal bar)
+    const modelCosts = {};
+    sessions.forEach(s => {
+        modelCosts[s.model] = (modelCosts[s.model] || 0) + calcSessionCost(s);
+    });
+    new Chart(document.getElementById('modelChart3'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(modelCosts),
+            datasets: [{ label: 'Cost ($)', data: Object.values(modelCosts), backgroundColor: ['#58a6ff', '#3fb950', '#bc8cff', '#d29922'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v.toFixed(2) } } } }
+    });
+}
+
+function renderSessionTable() {
+    const sessions = data.sessions;
+    let html = `<table><thead><tr>
+        <th>Session</th><th>Model</th><th>Provider</th><th>Input</th><th>Output</th><th>Total</th>
+        <th>Cost</th><th>Efficiency</th><th>Duration</th><th>Date</th>
+    </tr></thead><tbody>`;
+    sessions.slice().reverse().forEach(s => {
+        const cost = calcSessionCost(s);
+        const eff = cost > 0 ? (s.total_tokens / cost).toFixed(0) : 'N/A';
+        html += `<tr>
+            <td>${s.name}</td>
+            <td><span class="model-badge">${s.model}</span></td>
+            <td>${s.provider_name}</td>
+            <td>${fmt(s.input_tokens)}</td>
+            <td>${fmt(s.output_tokens)}</td>
+            <td><strong>${fmt(s.total_tokens)}</strong></td>
+            <td class="${cost > 0.1 ? 'cost-negative' : 'cost-positive'}">${fmt$(cost)}</td>
+            <td>${eff} tok/$</td>
+            <td>${(s.duration_ms / 1000).toFixed(1)}s</td>
+            <td>${new Date(s.created_at).toLocaleDateString()}</td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('sessionTable').innerHTML = html;
+}
+
+// ===== NAVIGATION =====
+document.getElementById('navTabs').addEventListener('click', function(e) {
+    const tab = e.target.closest('.nav-tab');
+    if (!tab) return;
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const view = tab.dataset.view;
+    document.querySelectorAll('[id^="view"]').forEach(v => v.classList.add('hidden'));
+    const el = document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1));
+    if (el) el.classList.remove('hidden');
+});
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+    renderKPIs();
+    renderCharts();
+    renderCostCharts();
+    renderModelCharts();
+    renderSessionTable();
+});
+</script>
+</body>
+</html>
