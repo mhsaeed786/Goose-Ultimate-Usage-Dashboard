@@ -72,14 +72,14 @@ tr:hover{background:#0f1317}
 <div class="panel"><h3><span class="icon">📈</span>Context Growth</h3><div class="chart-container"><canvas id="c-context"></canvas></div></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px">
+<div class="panel" style="margin-bottom:24px" id="anomaly-panel">
 <h3><span class="icon">⚠️</span>Anomaly Detection</h3>
 <div class="anomaly-item warning">🚨 <strong>Context bloat detected</strong> — One session grew 9x from ~8K to ~70K tokens. Consider compaction or new sessions.</div>
 <div class="anomaly-item info">ℹ️ <strong>High input ratio</strong> — Input tokens vastly exceed output tokens, typical of agentic tool-output workflows.</div>
 <div class="anomaly-item danger">🔴 <strong>Empty sessions found</strong> — Some sessions recorded zero tokens (possible model errors or abandoned chats).</div>
 </div>
 
-<div class="panel" style="margin-bottom:24px">
+<div class="panel" style="margin-bottom:24px" id="recommendations-panel">
 <h3><span class="icon">💡</span>Recommendations</h3>
 <div class="recommendation-item"><span class="icon">💡</span><div><strong>Model switching</strong> — For small chat tasks, consider using a smaller model to reduce token costs.</div></div>
 <div class="recommendation-item"><span class="icon">⚠️</span><div><strong>Close idle sessions</strong> — Empty or idle sessions waste context window space. Clean up regularly.</div></div>
@@ -183,6 +183,81 @@ document.getElementById('kpi-input').textContent = '?';
 document.getElementById('kpi-output').textContent = '?';
 document.getElementById('kpi-models').textContent = '?';
 document.getElementById('kpi-range').textContent = 'Run extract_data.py';
+
+// ===========================================
+// DATA LOADING — tries data.json (written by
+// `python scripts/extract_data.py --output data.json`)
+// and falls back to placeholders.
+// ===========================================
+
+// Escape untrusted strings (session names, model ids, etc.) before inserting into the DOM
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function fmt(n) {
+  const num = Number(n);
+  if (!isFinite(num)) return escapeHtml(n);
+  return num.toLocaleString();
+}
+
+function renderSessions(sessions) {
+  const tbody = document.getElementById('session-tbody');
+  if (!sessions || !sessions.length) return;
+  tbody.innerHTML = sessions.map(s => {
+    const id = escapeHtml(s.session_id ?? s.id ?? '');
+    const name = escapeHtml(s.name ?? s.title ?? '');
+    const model = escapeHtml(s.model ?? '');
+    const provider = escapeHtml(s.provider ?? '');
+    const created = escapeHtml(s.created_at ?? '');
+    const total = fmt(s.total_tokens);
+    const input = fmt(s.input_tokens);
+    const output = fmt(s.output_tokens);
+    return `<tr><td>${id}</td><td>${name}</td><td>${model}</td><td>${provider}</td><td>${created}</td><td>${total}</td><td>${input}</td><td>${output}</td></tr>`;
+  }).join('');
+}
+
+function applyData(data) {
+  const sessions = data.sessions || [];
+  const ledger = data.usage_ledger || [];
+  if (!sessions.length && !ledger.length) return false;
+
+  renderSessions(sessions);
+
+  // Simple KPI rollup from the ledger (falls back to session totals)
+  const rows = ledger.length ? ledger : sessions;
+  const sum = key => rows.reduce((acc, r) => acc + (Number(r[key]) || 0), 0);
+  const models = new Set(rows.map(r => r.model).filter(Boolean));
+  document.getElementById('kpi-sessions').textContent = sessions.length;
+  document.getElementById('kpi-total').textContent = fmt(sum('total_tokens'));
+  document.getElementById('kpi-input').textContent = fmt(sum('input_tokens'));
+  document.getElementById('kpi-output').textContent = fmt(sum('output_tokens'));
+  document.getElementById('kpi-models').textContent = models.size || '?';
+
+  // Anomaly/recommendation panels are only meaningful with real data
+  document.getElementById('anomaly-panel').style.display = 'block';
+  document.getElementById('recommendations-panel').style.display = 'block';
+  return true;
+}
+
+(async function loadData() {
+  try {
+    const res = await fetch('./data.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    applyData(data);
+  } catch (e) {
+    // No data.json available: keep placeholder charts/KPIs and hide data-driven panels
+    document.getElementById('anomaly-panel').style.display = 'none';
+    document.getElementById('recommendations-panel').style.display = 'none';
+    console.info('data.json not found — showing placeholders. Run: python scripts/extract_data.py --output data.json');
+  }
+})();
 </script>
 </body>
 </html>
