@@ -80,7 +80,11 @@ def main():
         print("Error: Could not find Goose database. Pass path as argument.")
         sys.exit(1)
     print(f"Extracting from: {db}")
-    data = extract(db, since=args.since)
+    try:
+        data = extract(db, since=args.since)
+    except sqlite3.OperationalError as e:
+        print(f"Error: cannot open database '{db}': {e}", file=sys.stderr)
+        sys.exit(1)
     payload = json.dumps(data, indent=2, default=str)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
