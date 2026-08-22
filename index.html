@@ -6,16 +6,23 @@
 <title>Goose Ultimate Usage Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* Dark-mode text tokens chosen for >= 4.5:1 contrast on their backgrounds (WCAG AA) */
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
 .container{max-width:1400px;margin:0 auto;padding:24px}
 header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
-header h1{font-size:28px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{color:#8b949e;font-size:13px;margin-bottom:24px}
-.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
-.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;text-align:center}
-.kpi-card .value{font-size:22px;font-weight:700;color:#58a6ff;margin-bottom:4px}
-.kpi-card .label{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px}
+header h1{font-size:28px;font-weight:700;color:#79b8ff} /* 6.4:1 on #0d1117 */
+.subtitle{color:#a8b3bf;font-size:13px;margin-bottom:24px} /* ~7:1 */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.kpi-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.kpi-card .label{font-size:11px;color:#a8b3bf;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.kpi-card .value{font-size:26px;font-weight:700;color:#79b8ff;margin-bottom:4px}
+.kpi-card .detail{font-size:12px;color:#a8b3bf;margin-bottom:8px}
+.trend{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:12px}
+.trend .icon{font-size:12px}
+.trend.up{color:#7ee787;background:rgba(63,185,80,0.15)}   /* 9.9:1 on tinted bg */
+.trend.down{color:#ffa198;background:rgba(248,81,73,0.15)} /* 8.6:1 */
+.trend.flat{color:#c9d1d9;background:rgba(139,148,158,0.15)}
 .row{display:grid;gap:16px;margin-bottom:24px}
 .row-3{grid-template-columns:repeat(3,1fr)}
 .row-2{grid-template-columns:repeat(2,1fr)}
@@ -24,238 +31,361 @@ header h1{font-size:28px;font-weight:700;background:linear-gradient(90deg,#58a6f
 .panel h3 .icon{font-size:16px}
 .chart-container{height:280px;position:relative}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#21262d;color:#8b949e;font-weight:600;text-align:left;padding:10px 12px;position:sticky;top:0;z-index:1}
-td{padding:10px 12px;border-bottom:1px solid #21262d}
+th{background:#21262d;color:#c9d1d9;font-weight:600;text-align:left;padding:10px 12px;position:sticky;top:0;z-index:1}
+td{padding:10px 12px;border-bottom:1px solid #21262d;color:#d0d7de}
 tr:hover{background:#0f1317}
-.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
 .scroll-table{max-height:400px;overflow-y:auto;border:1px solid #30363d;border-radius:8px}
-.anomaly-item{padding:12px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:8px;background:#0f1317}
+.anomaly-item{padding:12px;border-left:3px solid;border-radius:0 4px 4px 0;margin-bottom:8px;background:#0f1317;display:flex;gap:10px;align-items:flex-start}
 .anomaly-item.warning{border-color:#f0883e}
-.anomaly-item.info{border-color:#3fb950}
 .anomaly-item.danger{border-color:#f85149}
-.recommendation-item{padding:12px;background:#0f1317;border-radius:4px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
+.anomaly-item .icon{font-size:16px}
+.recommendation-item{padding:12px;background:#0f1317;border-radius:4px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;color:#d0d7de}
 .recommendation-item .icon{font-size:18px}
-.flow-box{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
-.flow-arrow{color:#8b949e;font-size:18px}
+/* Loading skeleton */
+.skeleton{position:relative;overflow:hidden;background:#21262d;border-radius:6px;color:transparent!important}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);animation:shimmer 1.4s infinite}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+/* Empty state */
+.empty-state{display:none;text-align:center;padding:48px 24px;background:#161b22;border:1px dashed #30363d;border-radius:8px;margin-bottom:24px}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.empty-state h2{font-size:18px;color:#e6edf3;margin-bottom:8px}
+.empty-state p{color:#a8b3bf;font-size:13px;margin-bottom:12px}
+.empty-state code{background:#21262d;padding:2px 6px;border-radius:4px;color:#79b8ff;font-size:12px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:900px){.kpi-row,.row-3,.row-2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="container">
 <header>
-<span style="font-size:32px">🦆</span>
+<span style="font-size:32px" aria-hidden="true">🦆</span>
 <h1>Goose Ultimate Usage Dashboard</h1>
 </header>
-<p class="subtitle">Replace the placeholder data below with your own extracted from Goose SQLite sessions.db</p>
+<p class="subtitle">All metrics are computed live from your Goose sessions.db extract (data.json)</p>
 
-<div class="kpi-row">
-<div class="kpi-card"><div class="value" id="kpi-sessions">--</div><div class="label">Sessions</div></div>
-<div class="kpi-card"><div class="value" id="kpi-total">--</div><div class="label">Total Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-input">--</div><div class="label">Input Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-output">--</div><div class="label">Output Tokens</div></div>
-<div class="kpi-card"><div class="value" id="kpi-models">--</div><div class="label">Models Used</div></div>
-<div class="kpi-card"><div class="value" id="kpi-range">--</div><div class="label">Date Range</div></div>
+<!-- Empty state: shown when data.json is missing/unreadable -->
+<div class="empty-state" id="empty-state" role="status">
+<div class="icon" aria-hidden="true">📭</div>
+<h2>No data yet</h2>
+<p>The dashboard could not load <code>data.json</code>.</p>
+<p>Run <code>python scripts/extract_data.py --output data.json</code> to generate it, then reload this page.</p>
+</div>
+
+<!-- KPI top row: metric -> trend -> detail scan order, max 3 cards -->
+<div class="kpi-row" id="kpi-row" aria-label="Key performance indicators">
+<div class="kpi-card" id="kpi-card-sessions">
+<div class="label">Sessions</div>
+<div class="value skeleton" id="kpi-sessions">0000</div>
+<div class="trend flat" id="trend-sessions" aria-live="polite"><span class="icon" aria-hidden="true">→</span><span class="trend-text">…</span></div>
+<div class="detail" id="detail-sessions">loading…</div>
+</div>
+<div class="kpi-card" id="kpi-card-tokens">
+<div class="label">Total Tokens</div>
+<div class="value skeleton" id="kpi-total">0000000</div>
+<div class="trend flat" id="trend-tokens" aria-live="polite"><span class="icon" aria-hidden="true">→</span><span class="trend-text">…</span></div>
+<div class="detail" id="detail-tokens">loading…</div>
+</div>
+<div class="kpi-card" id="kpi-card-avg">
+<div class="label">Avg Tokens / Session</div>
+<div class="value skeleton" id="kpi-avg">00000</div>
+<div class="trend flat" id="trend-avg" aria-live="polite"><span class="icon" aria-hidden="true">→</span><span class="trend-text">…</span></div>
+<div class="detail" id="detail-avg">loading…</div>
+</div>
 </div>
 
 <div class="row row-3">
-<div class="panel"><h3><span class="icon">⚡</span>Last 5 Hours</h3><div class="chart-container"><canvas id="c-last5h"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📅</span>Weekly Usage</h3><div class="chart-container"><canvas id="c-weekly"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📊</span>Monthly Trend</h3><div class="chart-container"><canvas id="c-monthly"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">📅</span>Daily Tokens — Last 14 Days</h3><div class="chart-container"><canvas id="c-daily" role="img" aria-label="Bar chart of total tokens per day over the last 14 days"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">📊</span>Weekly Usage</h3><div class="chart-container"><canvas id="c-weekly" role="img" aria-label="Bar chart of total tokens per week"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">📈</span>Monthly Trend</h3><div class="chart-container"><canvas id="c-monthly" role="img" aria-label="Line chart of total tokens per month"></canvas></div></div>
 </div>
 
 <div class="row row-2">
-<div class="panel"><h3><span class="icon">🍩</span>Token by Model</h3><div class="chart-container"><canvas id="c-doughnut"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📊</span>Tokens per Session</h3><div class="chart-container"><canvas id="c-horizontal"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">🍩</span>Tokens by Model</h3><div class="chart-container"><canvas id="c-doughnut" role="img" aria-label="Doughnut chart of token share by model"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">📊</span>Tokens per Session (top 15)</h3><div class="chart-container"><canvas id="c-horizontal" role="img" aria-label="Horizontal bar chart of tokens for the 15 largest sessions"></canvas></div></div>
 </div>
 
 <div class="row row-2">
-<div class="panel"><h3><span class="icon">📊</span>Input vs Output</h3><div class="chart-container"><canvas id="c-inout"></canvas></div></div>
-<div class="panel"><h3><span class="icon">📈</span>Context Growth</h3><div class="chart-container"><canvas id="c-context"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">🔀</span>Input vs Output</h3><div class="chart-container"><canvas id="c-inout" role="img" aria-label="Stacked bar chart of input versus output tokens per week"></canvas></div></div>
+<div class="panel"><h3><span class="icon" aria-hidden="true">📈</span>Session Size Over Time</h3><div class="chart-container"><canvas id="c-context" role="img" aria-label="Line chart of session total tokens over time"></canvas></div></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px" id="anomaly-panel">
-<h3><span class="icon">⚠️</span>Anomaly Detection</h3>
-<div class="anomaly-item warning">🚨 <strong>Context bloat detected</strong> — One session grew 9x from ~8K to ~70K tokens. Consider compaction or new sessions.</div>
-<div class="anomaly-item info">ℹ️ <strong>High input ratio</strong> — Input tokens vastly exceed output tokens, typical of agentic tool-output workflows.</div>
-<div class="anomaly-item danger">🔴 <strong>Empty sessions found</strong> — Some sessions recorded zero tokens (possible model errors or abandoned chats).</div>
+<!-- Anomaly panel: hidden until computed from real data -->
+<div class="panel" style="margin-bottom:24px" id="anomaly-panel" hidden>
+<h3><span class="icon" aria-hidden="true">⚠️</span>Anomaly Detection</h3>
+<div id="anomaly-list"></div>
 </div>
 
-<div class="panel" style="margin-bottom:24px" id="recommendations-panel">
-<h3><span class="icon">💡</span>Recommendations</h3>
-<div class="recommendation-item"><span class="icon">💡</span><div><strong>Model switching</strong> — For small chat tasks, consider using a smaller model to reduce token costs.</div></div>
-<div class="recommendation-item"><span class="icon">⚠️</span><div><strong>Close idle sessions</strong> — Empty or idle sessions waste context window space. Clean up regularly.</div></div>
-<div class="recommendation-item"><span class="icon">🔄</span><div><strong>Compaction timing</strong> — Sessions growing past ~50K tokens should trigger compaction or restart.</div></div>
-</div>
-
-<div class="panel" style="margin-bottom:24px">
-<h3><span class="icon">🔀</span>Token Flow</h3>
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px">
-<div class="flow-box" style="border-color:#58a6ff;color:#58a6ff">Provider A</div>
-<span class="flow-arrow">→</span>
-<div class="flow-box" style="border-color:#f0883e;color:#f0883e">Model X</div>
-<span class="flow-arrow">→</span>
-<div class="flow-box" style="border-color:#3fb950;color:#3fb950">Total Tokens</div>
-</div>
+<!-- Recommendations panel: hidden until computed from real data -->
+<div class="panel" style="margin-bottom:24px" id="recommendations-panel" hidden>
+<h3><span class="icon" aria-hidden="true">💡</span>Recommendations</h3>
+<div id="recommendation-list"></div>
 </div>
 
 <div class="panel">
-<h3><span class="icon">📋</span>Session Details</h3>
-<p style="color:#8b949e;font-size:12px;margin-bottom:12px">Replace this table with your own session data from extract_data.py</p>
+<h3><span class="icon" aria-hidden="true">📋</span>Session Details</h3>
 <div class="scroll-table">
 <table>
+<caption class="sr-only">All sessions with token totals</caption>
 <thead><tr><th>Session ID</th><th>Name</th><th>Model</th><th>Provider</th><th>Created</th><th>Total</th><th>Input</th><th>Output</th></tr></thead>
-<tbody id="session-tbody"><tr><td colspan="8" style="text-align:center;color:#8b949e;padding:24px">Run scripts/extract_data.py and paste your data into the SESSIONS array</td></tr></tbody>
+<tbody id="session-tbody"></tbody>
 </table>
 </div>
 </div>
 
-<p style="color:#484f58;font-size:11px;margin-top:24px;text-align:center">Goose Ultimate Usage Dashboard · Replace placeholder data with your own sessions.db extract · MIT License</p>
+<p style="color:#8b949e;font-size:11px;margin-top:24px;text-align:center">Goose Ultimate Usage Dashboard · Data from sessions.db via scripts/extract_data.py</p>
 </div>
 
 <script>
-// ===========================================
-// PLACEHOLDER DATA — Replace with your own
-// Run: python scripts/extract_data.py
-// Paste output into these arrays
-// ===========================================
-const SESSIONS = [];
-const LEDGER = [];
+'use strict';
+// =====================================================
+// All KPIs, charts, and panels are computed from the
+// SESSIONS / LEDGER arrays loaded from data.json.
+// There are no hardcoded placeholder numbers anywhere.
+// =====================================================
 
-// If no real data loaded, show a friendly placeholder chart
-function showPlaceholder(ctx, label) {
-  return new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Demo A', 'Demo B', 'Demo C'],
-      datasets: [{
-        label: label + ' (placeholder)',
-        data: [30, 50, 20],
-        backgroundColor: ['#58a6ff','#f0883e','#3fb950']
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: 'Replace with your data from sessions.db', color: '#8b949e', font: { size: 11 } }
-      },
-      scales: {
-        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
-        y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
-      }
-    }
-  });
+function escapeHtml(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmt(n){ const x=Number(n); return isFinite(x)?x.toLocaleString():escapeHtml(n); }
+function parseDate(v){ const d=new Date(v); return isNaN(d)?null:d; }
+
+// Normalize a session row into {date, total, input, output, model, id, name, provider}
+function normalizeSession(s){
+  const num = v => Math.max(0, Number(v)||0);
+  return {
+    id: s.session_id ?? s.id ?? '',
+    name: s.name ?? s.title ?? '',
+    model: s.model ?? '',
+    provider: s.provider ?? '',
+    date: parseDate(s.created_at ?? s.created_timestamp ?? s.timestamp),
+    total: num(s.total_tokens),
+    input: num(s.input_tokens),
+    output: num(s.output_tokens),
+  };
 }
 
-const charts = {};
-charts.last5h = showPlaceholder(document.getElementById('c-last5h').getContext('2d'), 'Last 5 Hours');
-charts.weekly = showPlaceholder(document.getElementById('c-weekly').getContext('2d'), 'Weekly');
-charts.monthly = showPlaceholder(document.getElementById('c-monthly').getContext('2d'), 'Monthly');
-charts.doughnut = new Chart(document.getElementById('c-doughnut').getContext('2d'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Model A', 'Model B', 'Model C'],
-    datasets: [{ data: [60, 30, 10], backgroundColor: ['#58a6ff','#f0883e','#3fb950'], borderWidth: 0 }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { title: { display: true, text: 'Replace with your model data', color: '#8b949e', font: { size: 11 } } } }
-});
-charts.horizontal = showPlaceholder(document.getElementById('c-horizontal').getContext('2d'), 'Per Session');
-charts.inout = showPlaceholder(document.getElementById('c-inout').getContext('2d'), 'In vs Out');
-charts.context = new Chart(document.getElementById('c-context').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: ['1','2','3','4','5'],
-    datasets: [{
-      label: 'Context (placeholder)',
-      data: [1000, 3000, 7000, 15000, 30000],
-      borderColor: '#58a6ff',
-      backgroundColor: 'rgba(88,166,255,0.1)',
-      fill: true,
-      tension: 0.4
-    }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Replace with your context data', color: '#8b949e', font: { size: 11 } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }, y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } } } }
-});
-
-// KPI placeholders
-document.getElementById('kpi-sessions').textContent = '?';
-document.getElementById('kpi-total').textContent = '?';
-document.getElementById('kpi-input').textContent = '?';
-document.getElementById('kpi-output').textContent = '?';
-document.getElementById('kpi-models').textContent = '?';
-document.getElementById('kpi-range').textContent = 'Run extract_data.py';
-
-// ===========================================
-// DATA LOADING — tries data.json (written by
-// `python scripts/extract_data.py --output data.json`)
-// and falls back to placeholders.
-// ===========================================
-
-// Escape untrusted strings (session names, model ids, etc.) before inserting into the DOM
-function escapeHtml(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function setTrend(elId, current, previous, unit){
+  const el = document.getElementById(elId);
+  const icon = el.querySelector('.icon');
+  const text = el.querySelector('.trend-text');
+  const pct = previous > 0 ? ((current - previous) / previous) * 100 : (current > 0 ? 100 : 0);
+  el.classList.remove('up','down','flat');
+  let cls, glyph, word;
+  if (previous === 0 && current === 0){ cls='flat'; glyph='→'; word='no change'; }
+  else if (pct > 1){ cls='up'; glyph='▲'; word='+'+Math.round(pct)+'%'; }
+  else if (pct < -1){ cls='down'; glyph='▼'; word=Math.round(pct)+'%'; }
+  else { cls='flat'; glyph='→'; word='~0%'; }
+  el.classList.add(cls);
+  icon.textContent = glyph; // color paired with an icon AND a signed % label
+  text.textContent = word + ' vs prev. period';
+  el.setAttribute('aria-label', `${unit}: ${word} versus previous period`);
 }
 
-function fmt(n) {
-  const num = Number(n);
-  if (!isFinite(num)) return escapeHtml(n);
-  return num.toLocaleString();
+function splitPeriods(sessions){
+  // Split sessions at the midpoint of their time span into "current" vs "previous" halves
+  const dated = sessions.filter(s => s.date).sort((a,b)=>a.date-b.date);
+  if (dated.length === 0) return {cur:[], prev:[]};
+  if (dated.length === 1) return {cur:dated, prev:[]};
+  const mid = new Date((dated[0].date.getTime() + dated[dated.length-1].date.getTime())/2);
+  return { cur: dated.filter(s=>s.date>=mid), prev: dated.filter(s=>s.date<mid) };
 }
 
-function renderSessions(sessions) {
-  const tbody = document.getElementById('session-tbody');
-  if (!sessions || !sessions.length) return;
-  tbody.innerHTML = sessions.map(s => {
-    const id = escapeHtml(s.session_id ?? s.id ?? '');
-    const name = escapeHtml(s.name ?? s.title ?? '');
-    const model = escapeHtml(s.model ?? '');
-    const provider = escapeHtml(s.provider ?? '');
-    const created = escapeHtml(s.created_at ?? '');
-    const total = fmt(s.total_tokens);
-    const input = fmt(s.input_tokens);
-    const output = fmt(s.output_tokens);
-    return `<tr><td>${id}</td><td>${name}</td><td>${model}</td><td>${provider}</td><td>${created}</td><td>${total}</td><td>${input}</td><td>${output}</td></tr>`;
-  }).join('');
-}
+function sum(arr,key){ return arr.reduce((a,s)=>a+s[key],0); }
 
-function applyData(data) {
-  const sessions = data.sessions || [];
+function applyData(data){
+  const sessions = (data.sessions || []).map(normalizeSession);
   const ledger = data.usage_ledger || [];
   if (!sessions.length && !ledger.length) return false;
 
-  renderSessions(sessions);
+  // If session token fields are absent, roll up from the ledger by session
+  if (sessions.length && sessions.every(s => s.total === 0) && ledger.length){
+    const byKey = {};
+    ledger.forEach(r=>{
+      const k = r.session_id ?? r.session ?? 'unknown';
+      const b = byKey[k] = byKey[k] || {total:0,input:0,output:0};
+      b.total += Number(r.total_tokens)||0;
+      b.input += Number(r.input_tokens)||0;
+      b.output += Number(r.output_tokens)||0;
+    });
+    sessions.forEach(s=>{ const b = byKey[s.id] || byKey['unknown']; if (b){ s.total=b.total; s.input=b.input; s.output=b.output; } });
+  }
 
-  // Simple KPI rollup from the ledger (falls back to session totals)
-  const rows = ledger.length ? ledger : sessions;
-  const sum = key => rows.reduce((acc, r) => acc + (Number(r[key]) || 0), 0);
-  const models = new Set(rows.map(r => r.model).filter(Boolean));
-  document.getElementById('kpi-sessions').textContent = sessions.length;
-  document.getElementById('kpi-total').textContent = fmt(sum('total_tokens'));
-  document.getElementById('kpi-input').textContent = fmt(sum('input_tokens'));
-  document.getElementById('kpi-output').textContent = fmt(sum('output_tokens'));
-  document.getElementById('kpi-models').textContent = models.size || '?';
+  const {cur, prev} = splitPeriods(sessions);
 
-  // Anomaly/recommendation panels are only meaningful with real data
-  document.getElementById('anomaly-panel').style.display = 'block';
-  document.getElementById('recommendations-panel').style.display = 'block';
+  // ---- KPI cards: metric -> trend -> detail ----
+  const curTokens = sum(cur,'total'), prevTokens = sum(prev,'total');
+  const curAvg = cur.length ? curTokens/cur.length : 0;
+  const prevAvg = prev.length ? prevTokens/prev.length : 0;
+  const curIn = sum(cur,'input'), curOut = sum(cur,'output');
+
+  const set = (vId, tId, dId, value, c, p, unit, detail) => {
+    document.getElementById(vId).textContent = value;
+    setTrend(tId, c, p, unit);
+    document.getElementById(dId).textContent = detail;
+  };
+  set('kpi-sessions','trend-sessions','detail-sessions', fmt(sessions.length),
+      cur.length, prev.length, 'Sessions',
+      `${cur.length} in current period · ${prev.length} previous`);
+  set('kpi-total','trend-tokens','detail-tokens', fmt(sessions.reduce((a,s)=>a+s.total,0)),
+      curTokens, prevTokens, 'Total tokens',
+      `${fmt(curIn)} in / ${fmt(curOut)} out (current period)`);
+  set('kpi-avg','trend-avg','detail-avg', fmt(Math.round(curAvg)),
+      curAvg, prevAvg, 'Average tokens per session',
+      prev.length ? `prev. period avg: ${fmt(Math.round(prevAvg))}` : 'no previous-period baseline');
+  document.getElementById('kpi-row').querySelectorAll('.skeleton').forEach(e=>e.classList.remove('skeleton'));
+
+  renderCharts(sessions);
+  renderAnomalies(sessions);
+  renderSessionsTable(sessions);
   return true;
 }
 
-(async function loadData() {
+// ---- Charts (all computed) ----
+const CHART_COLORS = ['#79b8ff','#f0883e','#7ee787','#d2a8ff','#ffa198','#a5d6ff','#e3b341','#ff9bce'];
+const GRID = '#30363d', TICK = '#a8b3bf';
+const baseScales = {
+  x: { ticks:{color:TICK}, grid:{color:GRID} },
+  y: { ticks:{color:TICK}, grid:{color:GRID}, beginAtZero:true }
+};
+function chartOpts(extra){
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{color:TICK} } },
+    scales: JSON.parse(JSON.stringify(baseScales))
+  }, extra||{});
+}
+function bucketize(sessions, keyFn){
+  const m = new Map();
+  sessions.forEach(s=>{ if(!s.date) return; const k = keyFn(s.date); m.set(k,(m.get(k)||0)+s.total); });
+  return [...m.entries()].sort((a,b)=>a[0]<b[0]?-1:1);
+}
+function barChart(id, labels, data, label, color, ariaExtra){
+  const el = document.getElementById(id);
+  el.setAttribute('aria-label', el.getAttribute('aria-label') + (ariaExtra||''));
+  return new Chart(el, { type:'bar',
+    data:{ labels, datasets:[{ label, data, backgroundColor: color }] },
+    options: chartOpts() });
+}
+
+function renderCharts(sessions){
+  const dated = sessions.filter(s=>s.date);
+
+  // Daily, last 14 days
+  const now = new Date();
+  const days = [];
+  for (let i=13;i>=0;i--){ const d=new Date(now); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const dailyMap = new Map(bucketize(dated, d=>d.toISOString().slice(0,10)));
+  barChart('c-daily', days.map(d=>d.slice(5)), days.map(d=>dailyMap.get(d)||0), 'Tokens/day', '#79b8ff');
+
+  // Weekly (ISO-ish week buckets)
+  const wk = d => { const t=new Date(d); t.setDate(t.getDate()-((t.getDay()+6)%7)); return t.toISOString().slice(0,10); };
+  const weekly = bucketize(dated, wk);
+  barChart('c-weekly', weekly.map(e=>'wk '+e[0].slice(5)), weekly.map(e=>e[1]), 'Tokens/week', '#7ee787');
+
+  // Monthly
+  const monthly = bucketize(dated, d=>d.toISOString().slice(0,7));
+  barChart('c-monthly', monthly.map(e=>e[0]), monthly.map(e=>e[1]), 'Tokens/month', '#f0883e');
+
+  // Doughnut by model
+  const byModel = new Map();
+  sessions.forEach(s=>{ const k = s.model || 'unknown'; byModel.set(k,(byModel.get(k)||0)+s.total); });
+  const models = [...byModel.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const dnEl = document.getElementById('c-doughnut');
+  dnEl.setAttribute('aria-label', 'Doughnut chart of token share by model: ' + models.map(m=>m[0]+' '+fmt(m[1])).join(', '));
+  new Chart(dnEl, { type:'doughnut',
+    data:{ labels: models.map(m=>m[0]), datasets:[{ data:models.map(m=>m[1]), backgroundColor:CHART_COLORS, borderColor:'#161b22' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{position:'right',labels:{color:TICK}} } } });
+
+  // Horizontal per-session (top 15)
+  const top = [...sessions].sort((a,b)=>b.total-a.total).slice(0,15);
+  new Chart(document.getElementById('c-horizontal'), { type:'bar',
+    data:{ labels: top.map(s=>String(s.name||s.id).slice(0,24)), datasets:[{ label:'Tokens', data:top.map(s=>s.total), backgroundColor:'#79b8ff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:TICK},grid:{color:GRID},beginAtZero:true}, y:{ticks:{color:TICK},grid:{color:GRID}} } } });
+
+  // Input vs output stacked per week
+  const wkMap = new Map();
+  dated.forEach(s=>{ const k=wk(s.date); const b=wkMap.get(k)||{i:0,o:0}; b.i+=s.input; b.o+=s.output; wkMap.set(k,b); });
+  const wkeys = [...wkMap.keys()].sort();
+  new Chart(document.getElementById('c-inout'), { type:'bar',
+    data:{ labels:wkeys.map(k=>'wk '+k.slice(5)), datasets:[
+      { label:'Input', data:wkeys.map(k=>wkMap.get(k).i), backgroundColor:'#79b8ff' },
+      { label:'Output', data:wkeys.map(k=>wkMap.get(k).o), backgroundColor:'#f0883e' }]},
+    options: Object.assign(chartOpts(), { scales: Object.assign(JSON.parse(JSON.stringify(baseScales)), { x:{stacked:true}, y:{stacked:true,beginAtZero:true} }) }) });
+
+  // Session size over time
+  const sorted = [...dated].sort((a,b)=>a.date-b.date);
+  new Chart(document.getElementById('c-context'), { type:'line',
+    data:{ labels: sorted.map(s=>s.date.toISOString().slice(0,10)), datasets:[{
+      label:'Session total tokens', data:sorted.map(s=>s.total),
+      borderColor:'#79b8ff', backgroundColor:'rgba(121,184,255,0.1)', fill:true, tension:0.3, pointRadius:2 }]},
+    options: chartOpts() });
+}
+
+// ---- Anomalies & recommendations (computed from real data only) ----
+function anomalyItem(level, icon, title, text){
+  return `<div class="anomaly-item ${level}"><span class="icon" aria-hidden="true">${icon}</span><div><strong>${escapeHtml(title)}</strong> — ${escapeHtml(text)}</div></div>`;
+}
+function renderAnomalies(sessions){
+  const anomalies = [];
+  const zero = sessions.filter(s=>s.total===0);
+  if (zero.length){
+    anomalies.push(anomalyItem('danger','🔴','Zero-token sessions',
+      `${zero.length} session(s) recorded 0 tokens (possible errors or abandoned chats).`));
+  }
+  const big = sessions.filter(s=>s.total>50000);
+  if (big.length){
+    const maxTok = Math.max(...big.map(s=>s.total));
+    anomalies.push(anomalyItem('warning','⚠️','Context bloat',
+      `${big.length} session(s) exceed 50K tokens (largest: ${fmt(maxTok)}). Consider compaction or starting new sessions.`));
+  }
+  const totalIn = sum(sessions,'input'), totalOut = sum(sessions,'output');
+  if (totalOut>0 && totalIn/totalOut>5){
+    anomalies.push(anomalyItem('warning','ℹ️','High input ratio',
+      `Input tokens are ${Math.round(totalIn/totalOut)}x output — typical of agentic tool-output workflows.`));
+  }
+  const recs = [];
+  if (zero.length) recs.push(['🧹','Close idle sessions','Zero-token sessions waste context window space — clean them up regularly.']);
+  if (big.length) recs.push(['🔄','Compaction timing','Sessions past ~50K tokens should trigger compaction or a restart.']);
+  if (totalOut>0 && totalIn/totalOut>5) recs.push(['💡','Model switching','For small chat tasks, a smaller model can reduce input token costs.']);
+  if (!anomalies.length) anomalies.push(anomalyItem('info','✅','No anomalies','No zero-token or >50K-token sessions found.'));
+  if (!recs.length) recs.push(['👍','Usage looks healthy','No cost-optimization opportunities flagged by current rules.']);
+
+  document.getElementById('anomaly-list').innerHTML = anomalies.join('');
+  document.getElementById('recommendation-list').innerHTML =
+    recs.map(([ic,t,x])=>`<div class="recommendation-item"><span class="icon" aria-hidden="true">${ic}</span><div><strong>${escapeHtml(t)}</strong> — ${escapeHtml(x)}</div></div>`).join('');
+  document.getElementById('anomaly-panel').hidden = false;
+  document.getElementById('recommendations-panel').hidden = false;
+}
+
+function renderSessionsTable(sessions){
+  const tbody = document.getElementById('session-tbody');
+  if (!sessions.length){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#a8b3bf;padding:24px">No sessions in data.json</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...sessions].sort((a,b)=>(b.date?.getTime()||0)-(a.date?.getTime()||0)).map(s=>`<tr><td>${escapeHtml(s.id)}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.model)}</td><td>${escapeHtml(s.provider)}</td><td>${escapeHtml(s.date?s.date.toISOString().slice(0,16).replace('T',' '):'')}</td><td>${fmt(s.total)}</td><td>${fmt(s.input)}</td><td>${fmt(s.output)}</td></tr>`).join('');
+}
+
+function showEmptyState(){
+  document.getElementById('empty-state').style.display = 'block';
+  document.getElementById('kpi-row').style.display = 'none';
+  document.querySelectorAll('.row, .panel:not(#anomaly-panel):not(#recommendations-panel)').forEach(e=>{ e.style.display='none'; });
+  document.getElementById('anomaly-panel').hidden = true;
+  document.getElementById('recommendations-panel').hidden = true;
+}
+
+(async function loadData(){
   try {
     const res = await fetch('./data.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    applyData(data);
+    if (!applyData(data)) showEmptyState();
   } catch (e) {
-    // No data.json available: keep placeholder charts/KPIs and hide data-driven panels
-    document.getElementById('anomaly-panel').style.display = 'none';
-    document.getElementById('recommendations-panel').style.display = 'none';
-    console.info('data.json not found — showing placeholders. Run: python scripts/extract_data.py --output data.json');
+    console.info('data.json not found —', e.message);
+    showEmptyState();
   }
 })();
 </script>

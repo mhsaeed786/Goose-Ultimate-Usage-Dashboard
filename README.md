@@ -1,33 +1,81 @@
 # Goose Ultimate Usage Dashboard
 
-A standalone HTML dashboard for visualizing Goose AI assistant token usage from the SQLite session database.
+A standalone HTML dashboard for visualizing Goose AI assistant token usage from the SQLite session database. Every KPI, chart, and panel is computed live from your own data — there are no hardcoded placeholder numbers.
 
-## ⚠️ Status
+## Pipeline: extract → save data.json → open dashboard
 
-This is a **prototype**. It has been tested on:
-- ✅ Windows 10 + Edge (primary dev environment)
-- ❓ macOS — not yet tested
-- ❓ Linux — not yet tested
-- ❓ Safari — not yet tested
+```
+┌──────────────────────────┐   ┌─────────────┐   ┌──────────────────┐
+│ 1. Extract from SQLite   │ → │ 2. data.json│ → │ 3. Open dashboard │
+│ scripts/extract_data.py  │   │ (repo root) │   │ index.html        │
+└──────────────────────────┘   └─────────────┘   └──────────────────┘
+```
 
-Chart.js is loaded from CDN, so it *should* work cross-platform, but this is not verified.
+### Step 1 — Extract
 
-## Features
+```bash
+# Auto-detects the Goose database (Windows / macOS / Linux paths below)
+python scripts/extract_data.py --output data.json
 
-- **Live KPI Strip**: Sessions, total tokens, input/output breakdown, models used, date range
-- **Time-Window Charts**: Last 5 Hours, Weekly, Monthly usage
-- **Model Breakdown**: Token distribution (doughnut) + per-session horizontal bars
-- **Token Flow**: Provider to Model to Total visual flow
-- **Agent-Aware Analytics**: Context window evolution, input vs output ratio
-- **Anomaly Detection**: Context bloat, empty sessions, cache utilization flags
-- **Cost Optimization**: Actionable recommendations based on usage patterns
-- **Session Table**: Full details with color-coded model badges
+# Or pass the DB path explicitly
+python scripts/extract_data.py "%APPDATA%\Block\goose\data\sessions\sessions.db" -o data.json
 
-## Quick Start
+# Optional: only include rows created on or after a date
+python scripts/extract_data.py --output data.json --since 2026-08-01
+```
 
-1. Open `index.html` in a modern Chromium-based browser (Edge, Chrome, Brave)
-2. The file contains **demo placeholder data** — replace it with your own extracted data
-3. To use your own data, run the extraction script and paste the JSON into the `SESSIONS` and `LEDGER` arrays
+The script opens the database **read-only** and writes `data.json` next to `index.html`.
+
+### Step 2 — Serve or open
+
+The dashboard fetches `data.json` on load, so it needs to be served over HTTP (a plain double-click of `index.html` works in some browsers, but Chrome/Edge block `file://` fetches):
+
+```bash
+python -m http.server 8000
+# then open http://localhost:8000
+```
+
+Alternatively, paste the extractor's JSON output directly into the `SESSIONS` / `LEDGER` handling by saving it as `data.json` — that is the only data file the page reads.
+
+### Step 3 — Read the dashboard
+
+- **Top row**: exactly 3 KPI cards (Sessions, Total Tokens, Avg Tokens/Session), each showing metric → trend delta vs the previous equal-length period → supporting detail.
+- **Charts**: daily (14d), weekly, monthly tokens; tokens by model; top sessions; input vs output; session size over time.
+- **Anomaly Detection & Recommendations** panels appear only when computed from real data:
+  - zero-token sessions flagged,
+  - sessions >50K tokens flagged with compaction advice,
+  - high input/output ratio flagged.
+- If `data.json` is missing or unreadable, an explicit empty state tells you to run `scripts/extract_data.py`.
+
+## Expected JSON schema (`data.json`)
+
+```jsonc
+{
+  "sessions": [                       // required (one of sessions/usage_ledger must be non-empty)
+    {
+      "session_id": "abc123",         // string — unique session id (falls back to "id")
+      "name": "Refactor auth module", // optional display name (falls back to "title")
+      "model": "claude-sonnet-4",     // optional model identifier
+      "provider": "anthropic",        // optional provider name
+      "created_at": "2026-08-20T14:32:00", // ISO timestamp (or created_timestamp/timestamp/created)
+      "total_tokens": 12345,          // number — token totals per session;
+      "input_tokens": 11000,          //   if absent/zero they are rolled up
+      "output_tokens": 1345           //   from usage_ledger by session_id
+    }
+  ],
+  "usage_ledger": [                   // optional per-turn rows
+    {
+      "session_id": "abc123",
+      "created_timestamp": "2026-08-20T14:35:00",
+      "total_tokens": 500,
+      "input_tokens": 450,
+      "output_tokens": 50
+    }
+  ]
+}
+```
+
+All numeric fields are optional-safe (missing → 0); timestamps are parsed with `new Date()`.
 
 ## Data Source
 
@@ -42,21 +90,18 @@ Goose stores session data in a SQLite database:
 Tables:
 - `sessions` — per-session token totals, provider, model
 - `usage_ledger` — per-turn token counts with timestamps
-- `messages` — individual messages
+- `messages` — individual messages (not used by the dashboard)
 
-## Extract Your Own Data
+## Accessibility & UX notes
 
-```bash
-python scripts/extract_data.py
-```
+- Dark-mode text colors meet WCAG AA contrast (≥4.5:1).
+- Trend deltas pair color with ▲/▼/→ icons and signed percentage labels.
+- Every chart canvas carries a descriptive `aria-label`; loading shows a skeleton state.
+- Untrusted strings (session names, model ids) are HTML-escaped before rendering.
 
-Or manually with sqlite3:
+## Status
 
-```bash
-sqlite3 "$APPDATA/Block/goose/data/sessions/sessions.db" "SELECT * FROM sessions;"
-```
-
-Paste the JSON output into the `SESSIONS` and `LEDGER` arrays in `index.html`.
+Prototype — tested on Windows 10/11 + Edge/Chrome. Chart.js is loaded from CDN.
 
 ## Contributing
 

@@ -5,6 +5,7 @@ import json
 import sys
 import os
 import argparse
+import datetime
 
 def find_db():
     """Auto-detect Goose database path."""
@@ -18,8 +19,13 @@ def find_db():
             return c
     return None
 
-def extract(db_path):
-    """Extract sessions and usage ledger as JSON."""
+def extract(db_path, since=None):
+    """Extract sessions and usage ledger as JSON, optionally filtered by date.
+
+    `since` is an ISO date string (YYYY-MM-DD); only rows created on or after
+    that date are included. Filtering is done in Python so it works regardless
+    of the column's storage format in SQLite.
+    """
     # Open read-only so extraction can never mutate the source database
     uri = "file:" + db_path.replace("\\", "/") + "?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
@@ -33,6 +39,26 @@ def extract(db_path):
         ledger = [dict(r) for r in cur.fetchall()]
     except sqlite3.OperationalError as e:
         print(f"Warning: usage_ledger query failed (table missing?): {e}", file=sys.stderr)
+
+    if since:
+        cutoff = datetime.date.fromisoformat(since)
+        ts_fields = ("created_at", "created_timestamp", "timestamp", "created")
+
+        def _row_date(row):
+            for f in ts_fields:
+                v = row.get(f)
+                if v:
+                    try:
+                        return datetime.date.fromisoformat(str(v)[:10])
+                    except ValueError:
+                        continue
+            return None
+
+        before = len(sessions) + len(ledger)
+        sessions = [r for r in sessions if (_d := _row_date(r)) is not None and _d >= cutoff]
+        ledger = [r for r in ledger if (_d := _row_date(r)) is not None and _d >= cutoff]
+        print(f"Date filter --since {since}: kept {len(sessions)} sessions, "
+              f"{len(ledger)} ledger rows (of {before} total rows)", file=sys.stderr)
     conn.close()
     return {"sessions": sessions, "usage_ledger": ledger}
 
@@ -40,14 +66,21 @@ def main():
     parser = argparse.ArgumentParser(description="Extract Goose usage data to JSON.")
     parser.add_argument("db", nargs="?", default=None, help="Path to the Goose SQLite DB")
     parser.add_argument("--output", "-o", default=None, help="Write JSON to this file instead of stdout")
+    parser.add_argument("--since", default=None, metavar="YYYY-MM-DD",
+                        help="Only include rows created on or after this date")
     args = parser.parse_args()
+    if args.since:
+        try:
+            datetime.date.fromisoformat(args.since)
+        except ValueError:
+            parser.error(f"--since must be YYYY-MM-DD, got: {args.since}")
 
     db = args.db or find_db()
     if not db:
         print("Error: Could not find Goose database. Pass path as argument.")
         sys.exit(1)
     print(f"Extracting from: {db}")
-    data = extract(db)
+    data = extract(db, since=args.since)
     payload = json.dumps(data, indent=2, default=str)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
